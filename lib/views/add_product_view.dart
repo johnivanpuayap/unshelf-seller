@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
@@ -36,7 +37,8 @@ class AddProductView extends StatelessWidget {
                   ),
                 )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(15.0),
+                  padding:
+                      const EdgeInsets.all(AppTheme.spacing16),
                   child: Column(
                     children: [
                       Form(
@@ -47,14 +49,13 @@ class AddProductView extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Product Image',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall,
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: AppTheme.spacing8),
                                 GestureDetector(
                                   onTap: () => viewModel.pickImage(true),
                                   child: Container(
@@ -63,16 +64,15 @@ class AddProductView extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: viewModel.errorFound
-                                            ? AppColors.warningColor
+                                            ? AppColors.error
                                             : AppColors.lightColor,
                                       ),
                                       borderRadius: BorderRadius.circular(
-                                          8.0), // Optional: rounded corners
+                                          AppTheme.radiusSmall),
                                     ),
                                     child: viewModel.mainImageState.data != null
                                         ? Stack(
                                             children: [
-                                              // Display the image
                                               Center(
                                                 child: Image.memory(
                                                   viewModel
@@ -82,17 +82,19 @@ class AddProductView extends StatelessWidget {
                                               ),
                                             ],
                                           )
-                                        : const Center(
+                                        : Center(
                                             child: Column(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.center,
                                               children: [
                                                 Icon(Icons.add_a_photo,
-                                                    color: Colors.black),
+                                                    color: AppColors
+                                                        .textPrimary),
                                                 Text(
                                                   'Click to Add Main Image',
-                                                  style: TextStyle(
-                                                      color: Colors.black),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium,
                                                 ),
                                               ],
                                             ),
@@ -105,151 +107,56 @@ class AddProductView extends StatelessWidget {
                                     children: [
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              AppColors.warningColor,
+                                          backgroundColor: AppColors.error,
                                           foregroundColor: Colors.white,
                                           alignment: Alignment.center,
                                           minimumSize: const Size(50, 30),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                                AppTheme.radiusSmall),
                                           ),
                                         ),
                                         onPressed: () {
                                           viewModel.deleteImage(true, null);
                                         },
-                                        child: const Text(
+                                        child: Text(
                                           'Remove',
-                                          style: TextStyle(
-                                              fontSize: 12), // Smaller text
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                  color: Colors.white),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
-                                      const Text(
+                                      const SizedBox(
+                                          width: AppTheme.spacing8),
+                                      Text(
                                         'You can change the main image by clicking on the image',
-                                        style: TextStyle(
-                                            fontSize: 10, color: Colors.grey),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall,
                                       ),
                                     ],
                                   ),
                               ],
                             ),
-                            // SizedBox(
-                            //   width: double.infinity,
-                            //   child: LayoutBuilder(
-                            //     builder: (context, constraints) {
-                            //       // Calculate the width of each item based on the available width
-                            //       double itemWidth =
-                            //           (constraints.maxWidth - 10 * 2.0) / 4 - 10.0;
-
-                            //       // Retrieve the image list from the view model
-                            //       var imageList = viewModel.additionalImages;
-
-                            //       return Column(
-                            //         crossAxisAlignment: CrossAxisAlignment.start,
-                            //         children: [
-                            //           SizedBox(
-                            //             height: itemWidth *
-                            //                 ((imageList.length / 4).ceil()),
-                            //             child: GridView.builder(
-                            //               shrinkWrap: true,
-                            //               physics:
-                            //                   const NeverScrollableScrollPhysics(),
-                            //               gridDelegate:
-                            //                   const SliverGridDelegateWithFixedCrossAxisCount(
-                            //                 crossAxisCount: 4,
-                            //                 crossAxisSpacing: 2.0,
-                            //                 mainAxisSpacing: 2.0,
-                            //                 childAspectRatio: 1.0,
-                            //               ),
-                            //               itemCount: imageList.length,
-                            //               itemBuilder: (context, index) {
-                            //                 final imageData = imageList[index].data;
-                            //                 return Container(
-                            //                   width: itemWidth,
-                            //                   height: itemWidth,
-                            //                   decoration: BoxDecoration(
-                            //                     border: Border.all(
-                            //                       color: imageData != null
-                            //                           ? Colors.white
-                            //                           : Colors.transparent,
-                            //                       width: 1.0,
-                            //                     ),
-                            //                     color: imageData == null
-                            //                         ? Colors.grey[200]
-                            //                         : null, // Placeholder color for no image
-                            //                   ),
-                            //                   child: imageData != null
-                            //                       ? ImageWithDelete(
-                            //                           imageData: imageData,
-                            //                           width: itemWidth,
-                            //                           height: itemWidth,
-                            //                           onDelete: () => viewModel
-                            //                               .deleteImage(false, index),
-                            //                         )
-                            //                       : Center(
-                            //                           child: Icon(
-                            //                             Icons.add_a_photo,
-                            //                             color: Colors.grey[600],
-                            //                           ),
-                            //                         ),
-                            //                 );
-                            //               },
-                            //             ),
-                            //           ),
-                            //           const SizedBox(height: 10.0),
-                            //           if (imageList.length >= 4)
-                            //             Center(
-                            //               child: Container(
-                            //                 padding: const EdgeInsets.symmetric(
-                            //                     vertical: 10.0),
-                            //                 child: Text(
-                            //                   'Max images have been added',
-                            //                   style: TextStyle(
-                            //                     color: Colors.grey[600],
-                            //                     fontWeight: FontWeight.bold,
-                            //                   ),
-                            //                 ),
-                            //               ),
-                            //             )
-                            //           else
-                            //             Center(
-                            //               child: CustomButton(
-                            //                 text: 'Add Additional Image',
-                            //                 onPressed: () =>
-                            //                     viewModel.pickImage(false),
-                            //               ),
-                            //             ),
-                            //         ],
-                            //       );
-                            //     },
-                            //   ),
-                            // ),
                             if (viewModel.errorFound)
-                              const Padding(
-                                padding: EdgeInsets.only(top: 8.0),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    top: AppTheme.spacing8),
                                 child: Text(
                                   'Main image is required',
-                                  style:
-                                      TextStyle(color: AppColors.warningColor),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: AppColors.error),
                                 ),
                               ),
-                            const SizedBox(height: 15),
+                            const SizedBox(height: AppTheme.spacing16),
                             TextFormField(
                               controller: viewModel.nameController,
                               decoration: const InputDecoration(
                                 labelText: 'Name',
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.lightColor),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: AppColors.lightColor,
-                                        width: 2.0)),
-                                errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: AppColors.warningColor)),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -259,24 +166,12 @@ class AddProductView extends StatelessWidget {
                               },
                             ),
 
-                            const SizedBox(height: 15),
+                            const SizedBox(height: AppTheme.spacing16),
 
                             TextFormField(
                               controller: viewModel.descriptionController,
                               decoration: const InputDecoration(
                                 labelText: 'Description',
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.lightColor),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppColors.lightColor, width: 2.0),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.warningColor),
-                                ),
                               ),
                               maxLines: 3,
                               validator: (value) {
@@ -286,7 +181,7 @@ class AddProductView extends StatelessWidget {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 15),
+                            const SizedBox(height: AppTheme.spacing16),
                             DropdownButtonFormField<String>(
                               initialValue: viewModel.selectedCategory.isEmpty
                                   ? null
@@ -300,18 +195,6 @@ class AddProductView extends StatelessWidget {
                               }).toList(),
                               decoration: const InputDecoration(
                                 labelText: 'Category',
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.lightColor),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppColors.lightColor, width: 2.0),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.warningColor),
-                                ),
                               ),
                               onChanged: (String? newValue) {
                                 viewModel.selectedCategory = newValue!;
@@ -323,7 +206,7 @@ class AddProductView extends StatelessWidget {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 15),
+                            const SizedBox(height: AppTheme.spacing16),
                             Align(
                               alignment: Alignment.center,
                               child: CustomButton(

@@ -40,7 +40,7 @@ class EditStoreProfileView extends StatelessWidget {
                             onTap: () => viewModel.pickImage(),
                             child: CircleAvatar(
                               radius: 50,
-                              backgroundColor: Colors.white,
+                              backgroundColor: Theme.of(context).colorScheme.surface,
                               backgroundImage: viewModel.profileImage != null
                                   ? MemoryImage(viewModel.profileImage!)
                                   : storeDetails.storeImageUrl != null
@@ -50,7 +50,7 @@ class EditStoreProfileView extends StatelessWidget {
                               child: const Align(
                                 alignment: Alignment.bottomRight,
                                 child: Icon(Icons.camera_alt,
-                                    color: AppColors.palmLeaf, size: 30),
+                                    color: AppColors.primaryColor, size: 30),
                               ),
                             ),
                           ),

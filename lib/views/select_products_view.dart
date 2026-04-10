@@ -4,6 +4,7 @@ import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
 import 'package:unshelf_seller/views/add_bundle_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:intl/intl.dart';
 
 class SelectProductsView extends StatefulWidget {
@@ -50,28 +51,30 @@ class _SelectProductsViewState extends State<SelectProductsView> {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(AppTheme.spacing8),
                   child: Row(children: [
                     Container(
                       width: MediaQuery.of(context).size.width * 0.60,
                       height: 35,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusLarge - 1),
                       ),
                       child: TextField(
                         controller: _searchController,
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: 'Search products...',
-                          prefixIcon:
-                              const Icon(Icons.search, color: Colors.grey),
+                          prefixIcon: Icon(Icons.search,
+                              color: AppColors.textSecondary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Colors.grey),
+                            borderSide:
+                                BorderSide(color: AppColors.border),
                           ),
                           contentPadding: const EdgeInsets.only(top: 8),
                         ),
-                        style: const TextStyle(fontSize: 14),
+                        style: Theme.of(context).textTheme.bodySmall,
                         onChanged: (query) {
                           _onSearchChanged();
                         },
@@ -79,11 +82,11 @@ class _SelectProductsViewState extends State<SelectProductsView> {
                     ),
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(AppTheme.spacing8),
                         child: DropdownButton<String>(
                           hint: const Text('Sort By'),
                           value: viewModel.sortBy,
-                          items: [
+                          items: const [
                             DropdownMenuItem<String>(
                               value: 'name',
                               child: Text('Name'),
@@ -103,7 +106,10 @@ class _SelectProductsViewState extends State<SelectProductsView> {
                     ),
                   ]),
                 ),
-                Text('If you want to unselect a product, long press on it.'),
+                Text(
+                  'If you want to unselect a product, long press on it.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 // Product List
                 Expanded(
                   child: Consumer<SelectProductsViewModel>(
@@ -121,7 +127,7 @@ class _SelectProductsViewState extends State<SelectProductsView> {
                       }
 
                       return Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(AppTheme.spacing16),
                         child: ListView.builder(
                           itemCount: viewModel.filteredItems.length,
                           itemBuilder: (context, index) {
@@ -206,10 +212,10 @@ class _ProductListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(
-          vertical: 4.0, horizontal: 8.0), // Add margin to each tile
-      elevation: 2.0,
+          vertical: AppTheme.spacing4, horizontal: AppTheme.spacing8),
+      elevation: AppTheme.elevationMedium,
       child: ListTile(
-        contentPadding: const EdgeInsets.all(8.0),
+        contentPadding: const EdgeInsets.all(AppTheme.spacing8),
         leading: Image.network(
           mainImageUrl,
           width: 50.0,
@@ -218,10 +224,11 @@ class _ProductListTile extends StatelessWidget {
         ),
         title: Text(
           name,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.green : Colors.black,
-          ),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : AppColors.textPrimary,
+              ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +237,7 @@ class _ProductListTile extends StatelessWidget {
           ],
         ),
         tileColor: isSelected
-            ? AppColors.palmLeaf.withValues(alpha: 0.1)
+            ? AppColors.primaryColor.withValues(alpha: 0.1)
             : Colors.transparent,
         onTap: onTap,
         onLongPress: onLongPress,

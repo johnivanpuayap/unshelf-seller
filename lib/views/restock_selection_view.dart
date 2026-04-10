@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
-import 'restock_details_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
+import 'restock_details_view.dart';
 
 class RestockSelectionView extends StatefulWidget {
   const RestockSelectionView({super.key});
@@ -35,20 +36,18 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
       body: viewModel.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppTheme.spacing16),
               child: Column(
                 children: [
-                  // Check if products list is empty
                   if (viewModel.products.isEmpty)
                     Expanded(
                       child: Center(
                         child: Text(
                           'No products available for restocking.',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                       ),
                     )
@@ -61,41 +60,46 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                           bool isSelected = viewModel.contain(product);
 
                           return Card(
-                            elevation: 3,
+                            elevation: AppTheme.elevationHigh - 1,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusMedium),
                             ),
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            color:
-                                isSelected ? AppColors.palmLeaf : Colors.white,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: AppTheme.spacing8),
+                            color: isSelected
+                                ? AppColors.primaryColor
+                                : Theme.of(context).colorScheme.surface,
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8.0,
-                                horizontal: 16.0,
+                                vertical: AppTheme.spacing8,
+                                horizontal: AppTheme.spacing16,
                               ),
                               title: Text(
                                 product.product!.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color:
-                                      isSelected ? Colors.white : Colors.black,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppColors.textPrimary),
                               ),
                               subtitle: Text(
                                 'Current Quantity: ${product.stock}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isSelected
-                                      ? Colors.white70
-                                      : Colors.grey[700],
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                        color: isSelected
+                                            ? Colors.white70
+                                            : AppColors.textSecondary),
                               ),
                               leading: CircleAvatar(
                                 backgroundImage:
                                     NetworkImage(product.product!.mainImageUrl),
                                 radius: 30,
-                                backgroundColor: Colors.grey[200],
+                                backgroundColor: AppColors.surface,
                               ),
                               trailing: Icon(
                                 isSelected
@@ -103,7 +107,7 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                                     : Icons.check_circle_outline,
                                 color: isSelected
                                     ? Colors.white
-                                    : Colors.grey, // White icon when selected
+                                    : AppColors.textSecondary,
                                 size: 30,
                               ),
                               onTap: () {
@@ -121,7 +125,7 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                         },
                       ),
                     ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppTheme.spacing16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -137,13 +141,15 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: AppTheme.spacing16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
                         ),
                         backgroundColor: viewModel.selectedProducts.isNotEmpty
-                            ? const Color(0xFF6A994E)
-                            : Colors.grey,
+                            ? AppColors.primaryColor
+                            : AppColors.textSecondary,
                       ),
                       child: const Text(
                         'Next',

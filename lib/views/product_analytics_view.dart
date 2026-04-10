@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/chart.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/product_analytics_viewmodel.dart';
 
 class ProductAnalyticsView extends StatefulWidget {
@@ -134,6 +135,7 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final viewModel = Provider.of<ProductAnalyticsViewModel>(context);
     var dataName = data.keys.toList();
 
@@ -146,18 +148,19 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
       body: viewModel.isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppTheme.spacing16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Product Dropdown
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.surface,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusMedium),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AppColors.textSecondary.withValues(alpha: 0.2),
                           spreadRadius: 1,
                           blurRadius: 5,
                           offset: const Offset(0, 3),
@@ -165,7 +168,9 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
                       ],
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
+                      horizontal: AppTheme.spacing16,
+                      vertical: AppTheme.spacing8,
+                    ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedProduct,
@@ -182,7 +187,7 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
                             value: product,
                             child: Text(
                               product,
-                              style: const TextStyle(fontSize: 16),
+                              style: theme.textTheme.titleMedium,
                             ),
                           );
                         }).toList(),
@@ -190,91 +195,70 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppTheme.spacing24),
 
                   // Lifetime Totals Card
                   Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    elevation: 3,
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(AppTheme.spacing16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Lifetime Totals',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.headlineSmall,
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: AppTheme.spacing12),
                           Center(
                             child: Column(
                               children: [
-                                const Text(
+                                Text(
                                   'Total Orders',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600),
+                                  style: theme.textTheme.titleMedium,
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: AppTheme.spacing4),
                                 Text(
                                   '${currentProductData['totalOrders']}',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF6A994E),
+                                  style: theme.textTheme.headlineLarge?.copyWith(
+                                    color: AppColors.primaryColor,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppTheme.spacing8),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
                                     _buildStatColumn(
-                                        'Completed',
-                                        currentProductData[
-                                            'totalCompletedOrders']),
+                                      context,
+                                      'Completed',
+                                      currentProductData[
+                                          'totalCompletedOrders'],
+                                    ),
                                     _buildStatColumn(
-                                        'Cancelled',
-                                        currentProductData[
-                                            'totalCancelledOrders']),
+                                      context,
+                                      'Cancelled',
+                                      currentProductData[
+                                          'totalCancelledOrders'],
+                                    ),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppTheme.spacing16),
                           Center(
                             child: Column(
                               children: [
-                                const Text(
+                                Text(
                                   'Total Sales',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600),
+                                  style: theme.textTheme.titleMedium,
                                 ),
-                                const SizedBox(height: 4),
-                                RichText(
-                                  text: TextSpan(
-                                    style: const TextStyle(
-                                      fontSize: 18.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.palmLeaf,
-                                    ),
-                                    children: [
-                                      const TextSpan(
-                                        text: '\u20B1 ', // Peso symbol
-                                        style: TextStyle(
-                                          fontFamily: 'Roboto',
-                                        ),
-                                      ),
-                                      TextSpan(
-                                          text: currentProductData['totalSales']
-                                              .toStringAsFixed(2)),
-                                    ],
+                                const SizedBox(height: AppTheme.spacing4),
+                                Text(
+                                  '\u20B1 ${currentProductData['totalSales'].toStringAsFixed(2)}',
+                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
@@ -285,18 +269,15 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppTheme.spacing24),
 
                   // Sales Overview
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Sales Overview',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: theme.textTheme.headlineMedium,
                       ),
                       DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -359,19 +340,16 @@ Widget _buildChart(String selectedValue, Map<String, dynamic> data) {
 }
 
 // Helper Method for Stats
-Widget _buildStatColumn(String title, int value) {
+Widget _buildStatColumn(BuildContext context, String title, int value) {
+  final theme = Theme.of(context);
   return Column(
     children: [
-      Text(
-        title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-      ),
-      const SizedBox(height: 2),
+      Text(title, style: theme.textTheme.bodyMedium),
+      const SizedBox(height: AppTheme.spacing4),
       Text(
         '$value',
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
         ),
       ),
     ],

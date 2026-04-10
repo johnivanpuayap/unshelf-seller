@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 import 'package:unshelf_seller/views/withdraw_request_view.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ class BalanceOverviewView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final walletViewModel = Provider.of<WalletViewModel>(context);
 
     return Scaffold(
@@ -20,57 +22,41 @@ class BalanceOverviewView extends StatelessWidget {
               Navigator.pop(context);
             }),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppTheme.spacing16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
                 child: Text(
                   'Current Balance',
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.palmLeaf,
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    color: AppColors.primaryColor,
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spacing24),
               Center(
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 40.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                    children: [
-                      const TextSpan(
-                        text: '\u20B1 ', // Peso symbol
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                        ),
-                      ),
-                      TextSpan(
-                        text: walletViewModel.balance.toStringAsFixed(2),
-                      ),
-                    ],
+                child: Text(
+                  '\u20B1 ${walletViewModel.balance.toStringAsFixed(2)}',
+                  style: theme.textTheme.displayLarge?.copyWith(
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
+              const SizedBox(height: AppTheme.spacing32),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
                 child: Text(
                   'Transaction History',
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.palmLeaf,
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    color: AppColors.primaryColor,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppTheme.spacing8),
               const Divider(),
               Expanded(
                 child: ListView.builder(
@@ -80,49 +66,34 @@ class BalanceOverviewView extends StatelessWidget {
                     bool isWithdrawal = (transaction.type == 'Withdraw' ||
                         transaction.type == 'Commission Fee');
                     return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(
+                          vertical: AppTheme.spacing8),
                       child: ListTile(
                         leading: Icon(
                           isWithdrawal
                               ? Icons.arrow_downward
                               : Icons.arrow_upward,
                           color: isWithdrawal
-                              ? AppColors.watermelonRed
-                              : AppColors.palmLeaf,
+                              ? AppColors.error
+                              : AppColors.primaryColor,
                         ),
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               transaction.type,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                              style: theme.textTheme.titleSmall?.copyWith(
                                 color: isWithdrawal
-                                    ? AppColors.watermelonRed
-                                    : AppColors.palmLeaf,
+                                    ? AppColors.error
+                                    : AppColors.primaryColor,
                               ),
                             ),
-                            RichText(
-                              text: TextSpan(
-                                style: TextStyle(
-                                  fontSize: 20.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: isWithdrawal
-                                      ? AppColors.watermelonRed
-                                      : AppColors.palmLeaf,
-                                ),
-                                children: [
-                                  const TextSpan(
-                                    text: '\u20B1 ', // Peso symbol
-                                    style: TextStyle(
-                                      fontFamily: 'Roboto',
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: transaction.amount.toStringAsFixed(2),
-                                  ),
-                                ],
+                            Text(
+                              '\u20B1 ${transaction.amount.toStringAsFixed(2)}',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: isWithdrawal
+                                    ? AppColors.error
+                                    : AppColors.primaryColor,
                               ),
                             ),
                           ],
@@ -130,10 +101,11 @@ class BalanceOverviewView extends StatelessWidget {
                         subtitle: Text(
                           DateFormat('MM-dd-yyyy')
                               .format(transaction.date.toLocal()),
-                          style: const TextStyle(color: Colors.grey),
+                          style: theme.textTheme.bodySmall,
                         ),
-                        tileColor:
-                            isWithdrawal ? Colors.red[50] : Colors.green[50],
+                        tileColor: isWithdrawal
+                            ? AppColors.statusCancelled
+                            : AppColors.statusCompleted,
                       ),
                     );
                   },
@@ -152,7 +124,6 @@ class BalanceOverviewView extends StatelessWidget {
               ),
             );
           },
-          backgroundColor: AppColors.palmLeaf,
           child: Image.asset(
             'assets/icons/withdraw.png',
             width: 24,

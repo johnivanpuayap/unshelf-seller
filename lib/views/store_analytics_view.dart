@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/analytics_viewmodel.dart';
 import 'package:unshelf_seller/components/chart.dart';
 
@@ -28,6 +30,8 @@ class _StoreAnalyticsViewState extends State<StoreAnalyticsView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Store Analytics',
@@ -38,176 +42,98 @@ class _StoreAnalyticsViewState extends State<StoreAnalyticsView> {
           return analyticsViewModel.isLoading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppTheme.spacing16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Lifetime Totals Section
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        margin: const EdgeInsets.only(bottom: 20.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                              spreadRadius: 1,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Lifetime Totals',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppTheme.spacing16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Lifetime Totals',
+                                style: theme.textTheme.headlineLarge,
                               ),
-                            ),
-                            const SizedBox(height: 16),
+                              const SizedBox(height: AppTheme.spacing16),
 
-                            // Centered Total Orders
-                            Center(
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Total Orders',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
+                              // Centered Total Orders
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Total Orders',
+                                      style: theme.textTheme.headlineSmall,
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '${analyticsViewModel.totalOrders}',
-                                    style: const TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF6A994E),
+                                    const SizedBox(height: AppTheme.spacing8),
+                                    Text(
+                                      '${analyticsViewModel.totalOrders}',
+                                      style: theme.textTheme.displayMedium
+                                          ?.copyWith(
+                                        color: AppColors.primaryColor,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  // Order Status Breakdown in one row
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Column(
-                                        children: [
-                                          const Text(
-                                            'Pending',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors
-                                                  .black, // Changed to black
-                                            ),
-                                          ),
-                                          Text(
-                                            '${analyticsViewModel.totalPendingOrders}',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors
-                                                  .black, // Changed to black
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        children: [
-                                          const Text(
-                                            'Ready',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors
-                                                  .black, // Changed to black
-                                            ),
-                                          ),
-                                          Text(
-                                            '${analyticsViewModel.totalReadyOrders}',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors
-                                                  .black, // Changed to black
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        children: [
-                                          const Text(
-                                            'Completed',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors
-                                                  .black, // Changed to black
-                                            ),
-                                          ),
-                                          Text(
-                                            '${analyticsViewModel.totalCompletedOrders}',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors
-                                                  .black, // Changed to black
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                    const SizedBox(height: AppTheme.spacing8),
+                                    // Order Status Breakdown in one row
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        _buildOrderStatColumn(
+                                          context,
+                                          'Pending',
+                                          '${analyticsViewModel.totalPendingOrders}',
+                                        ),
+                                        _buildOrderStatColumn(
+                                          context,
+                                          'Ready',
+                                          '${analyticsViewModel.totalReadyOrders}',
+                                        ),
+                                        _buildOrderStatColumn(
+                                          context,
+                                          'Completed',
+                                          '${analyticsViewModel.totalCompletedOrders}',
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
 
-                            const SizedBox(height: 16),
+                              const SizedBox(height: AppTheme.spacing16),
 
-                            // Centered Total Sales
-                            Center(
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Total Sales',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
+                              // Centered Total Sales
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Total Sales',
+                                      style: theme.textTheme.headlineSmall,
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '\u20B1 ${analyticsViewModel.totalSales.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontFamily:
-                                          'Roboto', // Set font to Roboto
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(
-                                          0xFF6A994E), // Green color for sales
+                                    const SizedBox(height: AppTheme.spacing8),
+                                    Text(
+                                      '\u20B1 ${analyticsViewModel.totalSales.toStringAsFixed(2)}',
+                                      style: theme.textTheme.displayMedium
+                                          ?.copyWith(
+                                        color: AppColors.primaryColor,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-                      const Text(
+                      const SizedBox(height: AppTheme.spacing24),
+                      Text(
                         'Orders',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                        style: theme.textTheme.headlineSmall,
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: AppTheme.spacing12),
                       DropdownButton<String>(
                         value: selectedOrdersValue,
                         onChanged: (String? newValue) {
@@ -256,13 +182,12 @@ class _StoreAnalyticsViewState extends State<StoreAnalyticsView> {
                           maxYValue: analyticsViewModel.annualMaxYOrder,
                         ),
 
-                      const SizedBox(height: 30),
-                      const Text(
+                      const SizedBox(height: AppTheme.spacing32),
+                      Text(
                         'Sales',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                        style: theme.textTheme.headlineSmall,
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: AppTheme.spacing12),
 
                       DropdownButton<String>(
                         value: selectedSalesValue,
@@ -316,6 +241,24 @@ class _StoreAnalyticsViewState extends State<StoreAnalyticsView> {
                 );
         },
       ),
+    );
+  }
+
+  Widget _buildOrderStatColumn(
+      BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Text(label, style: theme.textTheme.titleMedium),
+        const SizedBox(height: AppTheme.spacing4),
+        Text(
+          value,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 
@@ -9,6 +10,8 @@ class NotificationsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Notifications',
@@ -29,40 +32,37 @@ class NotificationsView extends StatelessWidget {
                             ? Icons.check_circle
                             : Icons.notifications,
                         color: notification.seen
-                            ? AppColors.palmLeaf
-                            : AppColors.deepMossGreen,
+                            ? AppColors.primaryColor
+                            : AppColors.darkColor,
                       ),
                       title: Text(
                         notification.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              notification.seen ? Colors.grey : Colors.black87,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: notification.seen
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
                         ),
                       ),
                       subtitle: Text(
                         notification.text,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color:
-                              notification.seen ? Colors.grey : Colors.black54,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: notification.seen
+                              ? AppColors.textHint
+                              : AppColors.textSecondary,
                         ),
                       ),
                       onTap: () {
                         model.markNotificationAsReadAsync(index);
-                        Navigator.pop(context); // Close the notifications page
+                        Navigator.pop(context);
                       },
                     );
                   },
                 )
-              : const Center(
-                  child: ListTile(
-                    leading: Icon(Icons.notifications_off, color: Colors.grey),
-                    title: Text(
-                      'No notifications',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
+              : const EmptyState(
+                  icon: Icons.notifications_off_outlined,
+                  title: 'No notifications',
+                  subtitle: 'You are all caught up!',
                 );
         },
       ),

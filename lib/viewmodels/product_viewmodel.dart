@@ -74,7 +74,7 @@ class ProductViewModel extends BaseViewModel {
       SnackBar(
         content: Text(message),
         backgroundColor:
-            isSuccess ? AppColors.primaryColor : AppColors.warningColor,
+            isSuccess ? AppColors.primaryColor : AppColors.error,
       ),
     );
   }

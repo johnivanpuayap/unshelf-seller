@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/components/empty_state.dart';
+import 'package:unshelf_seller/components/status_badge.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/views/order_history_details_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class OrderHistoryView extends StatefulWidget {
   const OrderHistoryView({super.key});
@@ -24,6 +27,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final viewModel = Provider.of<OrderViewModel>(context);
 
     return Scaffold(
@@ -34,87 +38,86 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
           }),
       body: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(width: 8.0),
-              // Title text
-              const Text(
-                'Filters',
-                style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
+          // Filter row
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing8,
+              vertical: AppTheme.spacing8,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Filters',
+                  style: theme.textTheme.titleMedium,
                 ),
-              ),
-
-              // A row for the filter and sort options
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Filter PopupMenuButton
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          viewModel.currentStatus = value;
-                        },
-                        itemBuilder: (BuildContext context) {
-                          return [
-                            'All',
-                            'Pending',
-                            'Processing',
-                            'Ready',
-                            'Completed',
-                            'Cancelled'
-                          ].map((String choice) {
-                            return PopupMenuItem<String>(
-                              value: choice,
-                              child: Text(choice),
-                            );
-                          }).toList();
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.filter_list, size: 20),
-                            const SizedBox(width: 4.0),
-                            Text(viewModel.currentStatus),
-                          ],
+                const SizedBox(width: AppTheme.spacing8),
+                // Filter PopupMenuButton
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    viewModel.currentStatus = value;
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      'All',
+                      'Pending',
+                      'Processing',
+                      'Ready',
+                      'Completed',
+                      'Cancelled'
+                    ].map((String choice) {
+                      return PopupMenuItem<String>(
+                        value: choice,
+                        child: Text(choice),
+                      );
+                    }).toList();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.filter_list, size: 20),
+                        const SizedBox(width: AppTheme.spacing4),
+                        Text(
+                          viewModel.currentStatus,
+                          style: theme.textTheme.bodyMedium,
                         ),
-                      ),
+                      ],
                     ),
-
-                    // Sort Order PopupMenuButton
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          viewModel.sortOrder = value;
-                        },
-                        itemBuilder: (BuildContext context) {
-                          return ['Ascending', 'Descending']
-                              .map((String choice) {
-                            return PopupMenuItem<String>(
-                              value: choice,
-                              child: Text(choice),
-                            );
-                          }).toList();
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.sort, size: 20),
-                            const SizedBox(width: 4.0),
-                            Text(viewModel.sortOrder),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+
+                // Sort Order PopupMenuButton
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    viewModel.sortOrder = value;
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return ['Ascending', 'Descending'].map((String choice) {
+                      return PopupMenuItem<String>(
+                        value: choice,
+                        child: Text(choice),
+                      );
+                    }).toList();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.sort, size: 20),
+                        const SizedBox(width: AppTheme.spacing4),
+                        Text(
+                          viewModel.sortOrder,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
           // Orders List
@@ -138,16 +141,19 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
 
                   String message = statusMessages[viewModel.currentStatus] ??
                       'No orders found.';
-                  return Center(child: Text(message));
+                  return EmptyState(
+                    icon: Icons.receipt_long_outlined,
+                    title: message,
+                  );
                 }
 
                 return ListView.builder(
                   itemCount: filteredOrders.length,
                   itemBuilder: (context, index) {
                     final order = filteredOrders[index];
-                    final isDarkBackground = index % 2 == 0;
+                    final isAlternate = index % 2 == 0;
 
-                    return GestureDetector(
+                    return InkWell(
                       onTap: () {
                         viewModel.selectOrder(order.id);
                         Navigator.push(
@@ -159,49 +165,42 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                         );
                       },
                       child: Container(
-                        color: isDarkBackground
-                            ? Colors.grey[200]
-                            : Colors.grey[100],
+                        color: isAlternate
+                            ? AppColors.surface
+                            : theme.colorScheme.surface,
                         padding: const EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 16.0),
+                          vertical: AppTheme.spacing8,
+                          horizontal: AppTheme.spacing16,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
+                                    horizontal: AppTheme.spacing16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Order ID: ${order.orderId}',
-                                      style: const TextStyle(
-                                        fontSize: 14.0,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    const SizedBox(height: 4.0),
+                                    const SizedBox(height: AppTheme.spacing4),
                                     Text(
                                       order.createdAt
                                           .toDate()
                                           .toLocal()
                                           .toString()
                                           .split(' ')[0],
-                                      style: TextStyle(
-                                        fontSize: 12.0,
-                                        color: Colors.grey[600],
-                                      ),
+                                      style: theme.textTheme.bodySmall,
                                     ),
-                                    const SizedBox(height: 4.0),
-                                    Text(
-                                      'Status: ${order.status}',
-                                      style: TextStyle(
-                                        fontSize: 12.0,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
+                                    const SizedBox(height: AppTheme.spacing4),
+                                    StatusBadge(status: order.status),
                                   ],
                                 ),
                               ),
@@ -209,39 +208,28 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                RichText(
-                                  text: TextSpan(
-                                    style: const TextStyle(
-                                      fontSize: 18.0,
-                                      color: AppColors.palmLeaf,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    children: [
-                                      const TextSpan(
-                                        text: '\u20B1 ', // Peso symbol
-                                        style: TextStyle(fontFamily: 'Roboto'),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                            '${order.totalPrice.toStringAsFixed(2)}',
-                                      ),
-                                    ],
+                                Text(
+                                  '\u20B1 ${order.totalPrice.toStringAsFixed(2)}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: AppColors.primaryColor,
                                   ),
                                 ),
-                                const SizedBox(height: 8.0),
+                                const SizedBox(height: AppTheme.spacing8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 4.0, horizontal: 12.0),
+                                    vertical: AppTheme.spacing4,
+                                    horizontal: AppTheme.spacing12,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: order.isPaid
-                                        ? AppColors.palmLeaf
-                                        : AppColors.watermelonRed,
-                                    borderRadius: BorderRadius.circular(12.0),
+                                        ? AppColors.primaryColor
+                                        : AppColors.error,
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.radiusFull),
                                   ),
                                   child: Text(
                                     order.isPaid ? 'Paid' : 'Unpaid',
-                                    style: const TextStyle(
-                                      fontSize: 12.0,
+                                    style: theme.textTheme.labelSmall?.copyWith(
                                       color: Colors.white,
                                     ),
                                   ),

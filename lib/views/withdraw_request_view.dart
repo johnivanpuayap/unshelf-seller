@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
 
 class WithdrawRequestView extends StatefulWidget {
@@ -33,6 +34,8 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Withdraw Request',
@@ -40,44 +43,32 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
             Navigator.pop(context);
           }),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppTheme.spacing16),
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Current Balance: ₱ ${widget.walletViewModel.balance.toStringAsFixed(2)}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                'Current Balance: \u20B1 ${widget.walletViewModel.balance.toStringAsFixed(2)}',
+                style: theme.textTheme.titleLarge,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spacing16),
               // Full Name Input Field
               TextField(
                 controller: _fullNameController,
                 decoration: InputDecoration(
                   labelText: 'Full Name',
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
                   errorText:
                       _errorMessage.isNotEmpty && _errorMessage.contains('name')
                           ? _errorMessage
                           : null,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spacing16),
               // Bank Dropdown
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'Select Bank',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
                 ),
                 initialValue: _selectedBank,
                 items: _phBanks
@@ -92,18 +83,12 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spacing16),
               // Bank Account Number Input Field
               TextField(
                 controller: _bankAccountController,
                 decoration: InputDecoration(
                   labelText: 'Bank Account Number',
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
                   errorText: _errorMessage.isNotEmpty &&
                           _errorMessage.contains('account')
                       ? _errorMessage
@@ -111,18 +96,12 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
                 ),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spacing16),
               // Withdrawal Amount Input Field
               TextField(
                 controller: _amountController,
                 decoration: InputDecoration(
                   labelText: 'Withdrawal Amount',
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.middleGreenYellow),
-                  ),
                   errorText: _errorMessage.isNotEmpty &&
                           _errorMessage.contains('amount')
                       ? _errorMessage
@@ -130,7 +109,19 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
                 ),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
+              if (_errorMessage.isNotEmpty &&
+                  !_errorMessage.contains('name') &&
+                  !_errorMessage.contains('account') &&
+                  !_errorMessage.contains('amount')) ...[
+                const SizedBox(height: AppTheme.spacing8),
+                Text(
+                  _errorMessage,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppTheme.spacing24),
               // Submit Button
               CustomButton(
                 onPressed: () {

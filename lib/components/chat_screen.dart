@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:unshelf_seller/core/interfaces/i_chat_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
+import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/views/chats_view.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -21,26 +23,11 @@ class _ChatScreenState extends State<ChatScreen>
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat"),
-        backgroundColor: const Color(0xFF6A994E),
-        foregroundColor: const Color(0xFFFFFFFF),
-        titleTextStyle: TextStyle(
-            color: const Color(0xFFFFFFFF),
-            fontSize: 20,
-            fontWeight: FontWeight.bold),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Color(0xFF386641),
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        title: const Text("Chat"),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(4.0),
+          preferredSize: const Size.fromHeight(4.0),
           child: Container(
-            color: Color(0xFFC8DD96),
+            color: AppColors.lightColor,
             height: 4.0,
           ),
         ),
@@ -61,10 +48,10 @@ class _ChatScreenState extends State<ChatScreen>
           if (snapshot.hasData) {
             return ListView.separated(
               separatorBuilder: (BuildContext context, int index) {
-                return const Divider(
-                  color: Colors.grey, // Line color
-                  height: 1, // Line height
-                  thickness: 1, // Line thickness
+                return Divider(
+                  color: Theme.of(context).dividerTheme.color,
+                  height: 1,
+                  thickness: 1,
                 );
               },
               itemCount: snapshot.data!.docs.length,
@@ -72,19 +59,18 @@ class _ChatScreenState extends State<ChatScreen>
                 var data = snapshot.data!.docs[index];
                 return Container(
                   margin: const EdgeInsets.symmetric(
-                      vertical: 6), // Adds space above/below the item
-                  padding:
-                      const EdgeInsets.all(12), // Padding inside the container
+                      vertical: AppTheme.spacing4),
+                  padding: const EdgeInsets.all(AppTheme.spacing12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(
-                        10), // Rounded corners for a modern look
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusSmall + 2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: AppColors.textSecondary.withValues(alpha: 0.1),
                         spreadRadius: 2,
                         blurRadius: 5,
-                        offset: Offset(0, 3), // Shadow position
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -110,11 +96,7 @@ class _ChatScreenState extends State<ChatScreen>
                       ),
                       title: Text(
                         data['name'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall,
                       )),
                 );
               },

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/image_delete.dart';
 
@@ -48,7 +49,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                   child: CircularProgressIndicator(),
                 )
               : Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppTheme.spacing16),
                   child: Form(
                     key: viewModel.formKey,
                     child: SingleChildScrollView(
@@ -60,7 +61,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                             child: Container(
                               width: double.infinity,
                               height: 300,
-                              color: const Color(0xFF386641),
+                              color: AppColors.darkColor,
                               child: viewModel.mainImageData != null
                                   ? ImageWithDelete(
                                       imageData: viewModel.mainImageData!,
@@ -69,45 +70,52 @@ class _EditBundleViewState extends State<EditBundleView> {
                                       height: 400.0,
                                       margin: EdgeInsets.all(0),
                                     )
-                                  : const Center(
+                                  : Center(
                                       child: Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.add_a_photo,
+                                          const Icon(Icons.add_a_photo,
                                               color: Colors.white),
                                           Text('Add Main Image',
-                                              style: TextStyle(
-                                                  color: Colors.white)),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                      color: Colors.white)),
                                         ],
                                       ),
                                     ),
                             ),
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                           // Bundle Name Field
-                          const Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: Text('Name',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style:
+                                    Theme.of(context).textTheme.titleSmall),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
                             controller: viewModel.bundleNameController,
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor:
-                                  const Color.fromARGB(255, 228, 228, 228),
+                              fillColor: AppColors.surface,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusMedium),
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 10.0, horizontal: 10.0),
-                              labelStyle: const TextStyle(color: Colors.black),
-                              errorStyle: const TextStyle(
-                                  color: AppColors.watermelonRed, fontSize: 10),
+                                  vertical: AppTheme.spacing8,
+                                  horizontal: AppTheme.spacing8),
+                              labelStyle:
+                                  TextStyle(color: AppColors.textPrimary),
+                              errorStyle: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: AppColors.error),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -115,32 +123,36 @@ class _EditBundleViewState extends State<EditBundleView> {
                               }
                               return null;
                             },
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                           // Bundle Description Field
-                          const Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: Text('Description',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style:
+                                    Theme.of(context).textTheme.titleSmall),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
                             controller: viewModel.bundleDescriptionController,
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor:
-                                  const Color.fromARGB(255, 228, 228, 228),
+                              fillColor: AppColors.surface,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusMedium),
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 10.0, horizontal: 10.0),
-                              labelStyle: const TextStyle(color: Colors.black),
-                              errorStyle: const TextStyle(
-                                  color: Color(0xFFBC4749), fontSize: 10),
+                                  vertical: AppTheme.spacing8,
+                                  horizontal: AppTheme.spacing8),
+                              labelStyle:
+                                  TextStyle(color: AppColors.textPrimary),
+                              errorStyle: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: AppColors.error),
                             ),
                             maxLines: 3,
                             validator: (value) {
@@ -149,17 +161,17 @@ class _EditBundleViewState extends State<EditBundleView> {
                               }
                               return null;
                             },
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                           // Category Dropdown Field
-                          const Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: Text('Category',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style:
+                                    Theme.of(context).textTheme.titleSmall),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: AppTheme.spacing4),
                           DropdownButtonFormField<String>(
                             initialValue: viewModel.selectedCategory.isEmpty
                                 ? null
@@ -172,15 +184,17 @@ class _EditBundleViewState extends State<EditBundleView> {
                             }).toList(),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor:
-                                  const Color.fromARGB(255, 228, 228, 228),
+                              fillColor: AppColors.surface,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusMedium),
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 12.0),
-                              labelStyle: const TextStyle(color: Colors.black),
+                                  vertical: AppTheme.spacing12,
+                                  horizontal: AppTheme.spacing12),
+                              labelStyle:
+                                  TextStyle(color: AppColors.textPrimary),
                             ),
                             onChanged: (String? newValue) {
                               viewModel.selectedCategory = newValue!;
@@ -191,31 +205,35 @@ class _EditBundleViewState extends State<EditBundleView> {
                               }
                               return null;
                             },
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.textPrimary),
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                           // Price Field
-                          const Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: Text('Price',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style:
+                                    Theme.of(context).textTheme.titleSmall),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
                             controller: viewModel.bundlePriceController,
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor:
-                                  const Color.fromARGB(255, 228, 228, 228),
+                              fillColor: AppColors.surface,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusMedium),
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 12.0),
-                              labelStyle: const TextStyle(color: Colors.black),
+                                  vertical: AppTheme.spacing12,
+                                  horizontal: AppTheme.spacing12),
+                              labelStyle:
+                                  TextStyle(color: AppColors.textPrimary),
                             ),
                             keyboardType: const TextInputType.numberWithOptions(
                                 decimal: true),
@@ -234,30 +252,32 @@ class _EditBundleViewState extends State<EditBundleView> {
                               }
                               return null;
                             },
-                            style: TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                           // Quantity Field
-                          const Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: Text('Quantity',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style:
+                                    Theme.of(context).textTheme.titleSmall),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
                             controller: viewModel.bundleStockController,
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor:
-                                  const Color.fromARGB(255, 228, 228, 228),
+                              fillColor: AppColors.surface,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusMedium),
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 12.0),
-                              labelStyle: const TextStyle(color: Colors.black),
+                                  vertical: AppTheme.spacing12,
+                                  horizontal: AppTheme.spacing12),
+                              labelStyle:
+                                  TextStyle(color: AppColors.textPrimary),
                             ),
                             keyboardType: TextInputType.number,
                             inputFormatters: [
@@ -273,35 +293,37 @@ class _EditBundleViewState extends State<EditBundleView> {
                               }
                               return null;
                             },
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                           // Discount Field
-                          const Align(
+                          Align(
                             alignment: Alignment.centerLeft,
                             child: Text('Discount (%)',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold)),
+                                style:
+                                    Theme.of(context).textTheme.titleSmall),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
                             controller: viewModel.bundleDiscountController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor:
-                                  const Color.fromARGB(255, 228, 228, 228),
+                              fillColor: AppColors.surface,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusMedium),
                                 borderSide: BorderSide.none,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 12.0),
-                              labelStyle: const TextStyle(color: Colors.black),
+                                  vertical: AppTheme.spacing12,
+                                  horizontal: AppTheme.spacing12),
+                              labelStyle:
+                                  TextStyle(color: AppColors.textPrimary),
                             ),
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          const SizedBox(height: 40.0),
+                          const SizedBox(height: AppTheme.spacing48),
 
                           CustomButton(
                             text: 'Update Bundle',
@@ -314,7 +336,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               }
                             },
                           ),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: AppTheme.spacing24),
                         ],
                       ),
                     ),

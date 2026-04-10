@@ -7,6 +7,7 @@ import 'package:unshelf_seller/components/my_textfield.dart';
 import 'package:unshelf_seller/core/interfaces/i_chat_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class ChatView extends StatefulWidget {
   final String receiverName;
@@ -50,7 +51,7 @@ class _ChatViewState extends State<ChatView>
         children: [
           Expanded(child: _buildMessageList()),
           _buildMessageInput(),
-          const SizedBox(height: 25),
+          const SizedBox(height: AppTheme.spacing24),
         ],
       ),
     );
@@ -89,7 +90,7 @@ class _ChatViewState extends State<ChatView>
     return Container(
       alignment: alignment,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(AppTheme.spacing8),
         child: Column(
           crossAxisAlignment:
               (data['senderId'] == _firebaseAuth.currentUser!.uid)
@@ -100,8 +101,7 @@ class _ChatViewState extends State<ChatView>
                   ? MainAxisAlignment.end
                   : MainAxisAlignment.start,
           children: [
-            // Text(widget.receiverName),
-            const SizedBox(height: 5),
+            const SizedBox(height: AppTheme.spacing4),
             (data['senderId'] == _firebaseAuth.currentUser!.uid)
                 ? ChatBubble(message: data['message'], type: 'sender')
                 : ChatBubble(message: data['message'], type: 'receiver'),
@@ -113,7 +113,7 @@ class _ChatViewState extends State<ChatView>
 
   Widget _buildMessageInput() {
     return Padding(
-      padding: const EdgeInsets.all(5.0),
+      padding: const EdgeInsets.all(AppTheme.spacing4),
       child: Row(
         children: [
           Expanded(
@@ -129,7 +129,7 @@ class _ChatViewState extends State<ChatView>
             icon: const Icon(
               Icons.send,
               size: 30,
-              color: AppColors.palmLeaf,
+              color: AppColors.primaryColor,
             ),
           ),
         ],

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/viewmodels/inventory_viewmodel.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/views/batch_history_view.dart';
 import 'package:intl/intl.dart';
 
 class InventoryView extends StatefulWidget {
+  const InventoryView({super.key});
+
   @override
   State<InventoryView> createState() => _InventoryViewState();
 }
@@ -40,6 +44,7 @@ class _InventoryViewState extends State<InventoryView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final viewModel = Provider.of<InventoryViewModel>(context);
 
     return Scaffold(
@@ -53,15 +58,12 @@ class _InventoryViewState extends State<InventoryView> {
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(AppTheme.spacing12),
             child: TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Search',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+                prefixIcon: Icon(Icons.search),
               ),
             ),
           ),
@@ -71,89 +73,94 @@ class _InventoryViewState extends State<InventoryView> {
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )
-                : ListView.builder(
-                    itemCount: filteredItems.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 8.0),
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: ExpansionTile(
-                          leading: const Icon(Icons.inventory_2,
-                              color: AppColors.primaryColor),
-                          title: Text(
-                            item.name,
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
-                          children: [
-                            const Divider(),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12.0, vertical: 8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Batch Details:',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 6.0),
-                                  if (item.batches.isEmpty) ...[
-                                    const Text(
-                                      'No batches available',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                  ] else ...[
-                                    Column(
-                                      children:
-                                          item.batches.map<Widget>((batch) {
-                                        return GestureDetector(
-                                          onTap: () async {
-                                            await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      BatchHistoryView(
-                                                          batchId: batch
-                                                              .batchNumber)),
-                                            );
-                                          },
-                                          child: ListTile(
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 0.0),
-                                            leading: const Icon(
-                                              Icons.check_circle_outline,
-                                              color: AppColors.lightColor,
-                                            ),
-                                            title: Text(
-                                              'Batch: ${batch.batchNumber}',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w500),
-                                            ),
-                                            subtitle: Text(
-                                              'Stock: ${batch.stock} | Expiry: ${DateFormat('MMMM d, y h:mm a').format(batch.expiryDate)}',
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ],
-                                ],
+                : filteredItems.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.inventory_2_outlined,
+                        title: 'No inventory items',
+                        subtitle: 'Add products to see them here.',
+                      )
+                    : ListView.builder(
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return Card(
+                            child: ExpansionTile(
+                              leading: const Icon(Icons.inventory_2,
+                                  color: AppColors.primaryColor),
+                              title: Text(
+                                item.name,
+                                style: theme.textTheme.titleMedium,
                               ),
+                              children: [
+                                const Divider(),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spacing12,
+                                    vertical: AppTheme.spacing8,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Batch Details:',
+                                        style: theme.textTheme.labelLarge,
+                                      ),
+                                      const SizedBox(
+                                          height: AppTheme.spacing8),
+                                      if (item.batches.isEmpty) ...[
+                                        Text(
+                                          'No batches available',
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                      ] else ...[
+                                        Column(
+                                          children:
+                                              item.batches.map<Widget>((batch) {
+                                            return GestureDetector(
+                                              onTap: () async {
+                                                await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          BatchHistoryView(
+                                                              batchId: batch
+                                                                  .batchNumber)),
+                                                );
+                                              },
+                                              child: ListTile(
+                                                contentPadding:
+                                                    EdgeInsets.zero,
+                                                leading: const Icon(
+                                                  Icons.check_circle_outline,
+                                                  color: AppColors.lightColor,
+                                                ),
+                                                title: Text(
+                                                  'Batch: ${batch.batchNumber}',
+                                                  style: theme
+                                                      .textTheme.bodyMedium
+                                                      ?.copyWith(
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                subtitle: Text(
+                                                  'Stock: ${batch.stock} | Expiry: ${DateFormat('MMMM d, y h:mm a').format(batch.expiryDate)}',
+                                                  style: theme
+                                                      .textTheme.bodySmall,
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

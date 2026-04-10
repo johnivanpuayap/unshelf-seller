@@ -5,6 +5,7 @@ import 'package:unshelf_seller/models/product_model.dart';
 import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
 import 'package:unshelf_seller/views/add_batch_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:unshelf_seller/views/edit_batch_view.dart';
 
@@ -61,7 +62,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppTheme.spacing16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -73,15 +74,16 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                   fit: BoxFit.cover,
                 ),
 
-                const SizedBox(height: 16.0),
-                _buildProductDetail('Name', viewModel.product!.name),
+                const SizedBox(height: AppTheme.spacing16),
+                _buildProductDetail(context, 'Name', viewModel.product!.name),
                 _buildProductDetail(
-                    'Description', viewModel.product!.description),
-                _buildProductDetail('Category', viewModel.product!.category),
-                const SizedBox(height: 5.0),
+                    context, 'Description', viewModel.product!.description),
+                _buildProductDetail(
+                    context, 'Category', viewModel.product!.category),
+                const SizedBox(height: AppTheme.spacing4),
                 // Batches Section
-                _buildSectionHeader('Batches'),
-                _buildBatchesSection(viewModel),
+                _buildSectionHeader(context, 'Batches'),
+                _buildBatchesSection(context, viewModel),
               ],
             ),
           );
@@ -105,8 +107,8 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
               }
             },
             icon: const Icon(Icons.add, color: Colors.white),
-            label:
-                const Text('Add Batch', style: TextStyle(color: Colors.white)),
+            label: const Text('Add Batch',
+                style: TextStyle(color: Colors.white)),
             backgroundColor: AppColors.primaryColor,
           );
         },
@@ -114,34 +116,31 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     );
   }
 
-  // Method to build product detail row
-  Widget _buildProductDetail(String title, String value) {
+  Widget _buildProductDetail(BuildContext context, String title, String value) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      margin: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
+      elevation: AppTheme.elevationMedium,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(AppTheme.spacing12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(color: AppColors.textSecondary),
               ),
             ),
             Expanded(
               flex: 2,
               child: Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 16,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
           ],
@@ -150,23 +149,22 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
     );
   }
 
-  // Header for sections
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding:
+          const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 20.0,
-          fontWeight: FontWeight.bold,
-          color: AppColors.primaryColor,
-        ),
+        style: Theme.of(context)
+            .textTheme
+            .headlineSmall
+            ?.copyWith(color: AppColors.primaryColor),
       ),
     );
   }
 
-  // Method to build batches section
-  Widget _buildBatchesSection(ProductSummaryViewModel viewModel) {
+  Widget _buildBatchesSection(
+      BuildContext context, ProductSummaryViewModel viewModel) {
     final batches = viewModel.batches;
 
     return Column(
@@ -179,22 +177,21 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
             itemBuilder: (context, index) {
               final batch = batches[index];
               return Card(
-                elevation: 2.0,
-                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                elevation: AppTheme.elevationMedium,
+                margin: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spacing4),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppTheme.spacing16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Display batch number directly
                       Text(
                         'Batch Number: ${batch.batchNumber}',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 8.0),
+                      const SizedBox(height: AppTheme.spacing8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment
-                            .spaceBetween, // Spread text and buttons
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Column(
@@ -202,20 +199,22 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                               children: [
                                 Text(
                                   'Quantity: ${batch.stock}',
-                                  style: TextStyle(fontSize: 14.0),
+                                  style:
+                                      Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 RichText(
                                   text: TextSpan(
-                                    style: const TextStyle(
-                                      fontSize: 13.0,
-                                      color: Colors.black,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            color: AppColors.textPrimary),
                                     children: [
                                       const TextSpan(
                                         text: 'Price: ',
                                       ),
                                       const TextSpan(
-                                        text: '\u20B1 ', // Peso symbol
+                                        text: '\u20B1 ',
                                         style: TextStyle(
                                           fontFamily: 'Roboto',
                                         ),
@@ -227,13 +226,11 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                     ],
                                   ),
                                 ),
-                                // Display price with 2 decimal points
                                 Text(
-                                    'Expiry Date: ${DateFormat('MM-dd-yyyy').format(batch.expiryDate)}'), // Formatted expiry date
+                                    'Expiry Date: ${DateFormat('MM-dd-yyyy').format(batch.expiryDate)}'),
                               ],
                             ),
                           ),
-                          // Icons for editing and deleting
                           Row(
                             children: [
                               IconButton(
@@ -257,35 +254,32 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.delete,
-                                    color: AppColors.warningColor),
+                                    color: AppColors.error),
                                 onPressed: () {
                                   showDialog(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      title: const Text(
+                                      title: Text(
                                         'Delete Batch',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black87, // Title color
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
                                       ),
-                                      content: const Text(
+                                      content: Text(
                                         'Are you sure you want to delete this batch?',
-                                        style: TextStyle(
-                                            color: Colors
-                                                .black54), // Content color
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
                                       ),
                                       actions: [
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(); // Close the dialog
+                                            Navigator.of(context).pop();
                                           },
                                           child: const Text(
                                             'No',
                                             style: TextStyle(
-                                              color: AppColors
-                                                  .palmLeaf, // Custom color for 'No'
+                                              color: AppColors.primaryColor,
                                             ),
                                           ),
                                         ),
@@ -293,24 +287,22 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                           onPressed: () {
                                             viewModel
                                                 .deleteBatch(batch.batchNumber);
-                                            Navigator.of(context)
-                                                .pop(); // Close the dialog
+                                            Navigator.of(context).pop();
                                           },
                                           child: const Text(
                                             'Yes',
                                             style: TextStyle(
-                                              color: AppColors
-                                                  .watermelonRed, // Custom color for 'Yes'
+                                              color: AppColors.error,
                                             ),
                                           ),
                                         ),
                                       ],
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(
-                                            12.0), // Rounded corners for the dialog
+                                            AppTheme.radiusMedium),
                                       ),
-                                      backgroundColor: Colors
-                                          .white, // Background color of the dialog
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.surface,
                                     ),
                                   );
                                 },
@@ -329,25 +321,25 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
           SizedBox(
             width: double.infinity,
             child: Card(
-              elevation: 2.0,
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              elevation: AppTheme.elevationMedium,
+              margin: const EdgeInsets.symmetric(vertical: AppTheme.spacing4),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius:
+                    BorderRadius.circular(AppTheme.radiusSmall),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(AppTheme.spacing16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment
-                      .center, // Center the icon and text horizontally
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 8.0),
+                    const SizedBox(height: AppTheme.spacing8),
                     Text(
                       'No batches available.',
                       style: Theme.of(context)
                           .textTheme
                           .bodyMedium
-                          ?.copyWith(color: Colors.grey[600]),
+                          ?.copyWith(color: AppColors.textSecondary),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -365,7 +357,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Add Batch',
+          title: Text('Add Batch',
               style: TextStyle(color: AppColors.primaryColor)),
           content: const Text(
             'Products need to have batches to be listed.\nDo you want to add a batch now?',

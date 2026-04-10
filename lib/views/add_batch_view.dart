@@ -4,6 +4,7 @@ import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/viewmodels/batch_viewmodel.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 
 class AddBatchView extends StatelessWidget {
@@ -25,11 +26,11 @@ class AddBatchView extends StatelessWidget {
         },
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppTheme.spacing16),
         child: Column(
           children: [
-            _buildProductHeader(product),
-            const SizedBox(height: 16.0),
+            _buildProductHeader(context, product),
+            const SizedBox(height: AppTheme.spacing16),
             Form(
               key: _formKey,
               child: Column(
@@ -37,33 +38,13 @@ class AddBatchView extends StatelessWidget {
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Batch Number (Optional)',
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.lightColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.lightColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.warningColor),
-                      ),
                     ),
                     controller: viewModel.batchNumberController,
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Expiration Date',
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.lightColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.lightColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.warningColor),
-                      ),
                     ),
                     controller: TextEditingController(
                       text: viewModel.expiryDate != null
@@ -89,20 +70,10 @@ class AddBatchView extends StatelessWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Price',
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.lightColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.lightColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.warningColor),
-                      ),
                     ),
                     keyboardType: TextInputType.number,
                     controller: viewModel.priceController,
@@ -117,20 +88,10 @@ class AddBatchView extends StatelessWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Stock',
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.lightColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.lightColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.warningColor),
-                      ),
                     ),
                     keyboardType: TextInputType.number,
                     controller: viewModel.stockController,
@@ -145,21 +106,11 @@ class AddBatchView extends StatelessWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Quantifier',
                       hintText: 'e.g. kilogram, can, pack',
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.lightColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.lightColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.warningColor),
-                      ),
                     ),
                     controller: viewModel.quantifierController,
                     validator: (value) {
@@ -169,21 +120,11 @@ class AddBatchView extends StatelessWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Discount (%)',
                       hintText: 'e.g. 10 for 10%, 0 for no discount',
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.lightColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.lightColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.warningColor),
-                      ),
                     ),
                     keyboardType: TextInputType.number,
                     controller: viewModel.discountController,
@@ -200,12 +141,11 @@ class AddBatchView extends StatelessWidget {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: AppTheme.spacing16),
                   CustomButton(
                       text: 'Add Product Batch',
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          // Call the ViewModel method to add the batch
                           bool isSuccessful =
                               await viewModel.addBatch(product.id);
 
@@ -241,41 +181,33 @@ class AddBatchView extends StatelessWidget {
     );
   }
 
-  Widget _buildProductHeader(ProductModel product) {
+  Widget _buildProductHeader(BuildContext context, ProductModel product) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Product header section
         Row(
           children: [
-            const Text(
+            Text(
               'Batch Details for:',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(width: 8.0), // Space between label and product name
+            const SizedBox(width: AppTheme.spacing8),
             Expanded(
               child: Text(
                 product.name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                overflow: TextOverflow.ellipsis, // Handles long product names
+                style: Theme.of(context).textTheme.titleMedium,
+                overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8.0), // Adds space after the header
-
-        // Product image with rounded corners for a modern look
+        const SizedBox(height: AppTheme.spacing8),
         ClipRRect(
-          borderRadius:
-              BorderRadius.circular(12.0), // Rounded corners for the image
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           child: Image.network(
             product.mainImageUrl,
             width: double.infinity,
@@ -283,7 +215,7 @@ class AddBatchView extends StatelessWidget {
             fit: BoxFit.cover,
           ),
         ),
-        const SizedBox(height: 10.0),
+        const SizedBox(height: AppTheme.spacing8),
       ],
     );
   }

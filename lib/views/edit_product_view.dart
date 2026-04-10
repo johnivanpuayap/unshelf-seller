@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
 import 'package:unshelf_seller/components/image_delete.dart';
 import 'package:unshelf_seller/models/product_model.dart';
@@ -28,8 +30,7 @@ class _EditProductViewState extends State<EditProductView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       viewModel = context.read<ProductViewModel>();
-      viewModel.loadProduct(
-          widget.product); // Load product once after the build phase
+      viewModel.loadProduct(widget.product);
     });
   }
 
@@ -44,7 +45,7 @@ class _EditProductViewState extends State<EditProductView> {
               viewModel.clearData();
             }),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.all(15.0),
+          padding: const EdgeInsets.all(AppTheme.spacing16),
           child: Column(
             children: [
               Row(mainAxisAlignment: MainAxisAlignment.start, children: [
@@ -56,27 +57,30 @@ class _EditProductViewState extends State<EditProductView> {
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.green, width: 5),
+                        border: Border.all(
+                            color: AppColors.primaryColor, width: 5),
                         color: Colors.transparent,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 16.0),
-                const Column(
+                const SizedBox(width: AppTheme.spacing16),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Product Details',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold)),
+                        style: Theme.of(context).textTheme.titleSmall),
                     Text(
                       'Enter product details below',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textSecondary),
                     ),
                   ],
                 )
               ]),
-              const SizedBox(height: 30.0),
+              const SizedBox(height: AppTheme.spacing32),
               Form(
                 key: viewModel.formKey,
                 child: Column(
@@ -87,7 +91,7 @@ class _EditProductViewState extends State<EditProductView> {
                       child: Container(
                         width: double.infinity,
                         height: 350,
-                        color: const Color(0xFF386641),
+                        color: AppColors.darkColor,
                         child: viewModel.mainImageState.data != null
                             ? ImageWithDelete(
                                 imageData: viewModel.mainImageState.data!,
@@ -97,28 +101,28 @@ class _EditProductViewState extends State<EditProductView> {
                                 height: 400.0,
                                 margin: const EdgeInsets.all(0),
                               )
-                            : const Center(
+                            : Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.add_a_photo,
+                                    const Icon(Icons.add_a_photo,
                                         color: Colors.white),
                                     Text(
                                       'Add Main Image',
-                                      style: TextStyle(color: Colors.white),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(color: Colors.white),
                                     ),
                                   ],
                                 ),
                               ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
+                    const SizedBox(height: AppTheme.spacing24),
+                    Text(
                       'Product Gallery',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
                     SizedBox(
                       width: double.infinity,
@@ -159,8 +163,8 @@ class _EditProductViewState extends State<EditProductView> {
                                           width: 1.0,
                                         ),
                                         color: imageData == null
-                                            ? Colors.grey[200]
-                                            : null, // Placeholder color for no image
+                                            ? AppColors.surface
+                                            : null,
                                       ),
                                       child: imageData != null
                                           ? ImageWithDelete(
@@ -173,25 +177,27 @@ class _EditProductViewState extends State<EditProductView> {
                                           : Center(
                                               child: Icon(
                                                 Icons.add_a_photo,
-                                                color: Colors.grey[600],
+                                                color: AppColors.textSecondary,
                                               ),
                                             ),
                                     );
                                   },
                                 ),
                               ),
-                              const SizedBox(height: 10.0),
+                              const SizedBox(height: AppTheme.spacing8),
                               if (imageList.length >= 4)
                                 Center(
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 10.0),
+                                        vertical: AppTheme.spacing8),
                                     child: Text(
                                       'Max images have been added',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 )
@@ -208,37 +214,41 @@ class _EditProductViewState extends State<EditProductView> {
                       ),
                     ),
                     if (viewModel.errorFound)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8.0),
+                      Padding(
+                        padding:
+                            const EdgeInsets.only(top: AppTheme.spacing8),
                         child: Text(
                           'Main image is required',
-                          style: TextStyle(color: Colors.red),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: AppColors.error),
                         ),
                       ),
-                    const SizedBox(height: 20),
-                    const Text(
+                    const SizedBox(height: AppTheme.spacing24),
+                    Text(
                       'Name',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
                     TextFormField(
                       controller: viewModel.nameController,
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: const Color.fromARGB(255, 228, 228, 228),
+                        fillColor: AppColors.surface,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10.0, horizontal: 10.0),
-                        labelStyle: const TextStyle(color: Colors.black),
-                        errorStyle: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 10,
-                        ),
+                            vertical: AppTheme.spacing8,
+                            horizontal: AppTheme.spacing8),
+                        labelStyle:
+                            TextStyle(color: AppColors.textPrimary),
+                        errorStyle: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: AppColors.error),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -246,29 +256,29 @@ class _EditProductViewState extends State<EditProductView> {
                         }
                         return null;
                       },
-                      style: const TextStyle(fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
+                    const SizedBox(height: AppTheme.spacing24),
+                    Text(
                       'Description',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: AppTheme.spacing4),
                     TextFormField(
                       controller: viewModel.descriptionController,
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: const Color.fromARGB(255, 228, 228, 228),
+                        fillColor: AppColors.surface,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12.0, horizontal: 12.0),
-                        labelStyle: const TextStyle(color: Colors.black),
+                            vertical: AppTheme.spacing12,
+                            horizontal: AppTheme.spacing12),
+                        labelStyle:
+                            TextStyle(color: AppColors.textPrimary),
                       ),
                       maxLines: 3,
                       validator: (value) {
@@ -277,17 +287,14 @@ class _EditProductViewState extends State<EditProductView> {
                         }
                         return null;
                       },
-                      style: const TextStyle(fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
+                    const SizedBox(height: AppTheme.spacing24),
+                    Text(
                       'Category',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: AppTheme.spacing4),
                     DropdownButtonFormField<String>(
                       initialValue: viewModel.selectedCategory.isEmpty
                           ? null
@@ -300,14 +307,17 @@ class _EditProductViewState extends State<EditProductView> {
                       }).toList(),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: const Color.fromARGB(255, 228, 228, 228),
+                        fillColor: AppColors.surface,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12.0, horizontal: 12.0),
-                        labelStyle: const TextStyle(color: Colors.black),
+                            vertical: AppTheme.spacing12,
+                            horizontal: AppTheme.spacing12),
+                        labelStyle:
+                            TextStyle(color: AppColors.textPrimary),
                       ),
                       onChanged: (String? newValue) {
                         viewModel.selectedCategory = newValue!;
@@ -318,9 +328,12 @@ class _EditProductViewState extends State<EditProductView> {
                         }
                         return null;
                       },
-                      style: const TextStyle(fontSize: 12, color: Colors.black),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppTheme.spacing8),
                     Align(
                       alignment: Alignment.center,
                       child: viewModel.isLoading

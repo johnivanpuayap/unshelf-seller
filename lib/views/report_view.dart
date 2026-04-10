@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/models/report_model.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class ReportFormView extends StatefulWidget {
   @override
@@ -21,14 +22,12 @@ class _ReportFormViewState extends State<ReportFormView> {
       setState(() => _isSubmitting = true);
 
       try {
-        // Get the current user's ID
         final user = FirebaseAuth.instance.currentUser;
 
         if (user == null) {
           throw Exception('User not logged in');
         }
 
-        // Create a report model
         final report = ReportModel(
           userId: user.uid,
           title: _titleController.text,
@@ -36,15 +35,12 @@ class _ReportFormViewState extends State<ReportFormView> {
           createdAt: DateTime.now(),
         );
 
-        // Save report via service
         await locator<IUserProfileService>().submitReport(report);
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Report submitted successfully!')),
         );
 
-        // Clear the form
         _formKey.currentState!.reset();
         _titleController.clear();
         _descriptionController.clear();
@@ -65,7 +61,7 @@ class _ReportFormViewState extends State<ReportFormView> {
         title: const Text('Submit a Report'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppTheme.spacing16),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -82,7 +78,7 @@ class _ReportFormViewState extends State<ReportFormView> {
                   validator: (value) =>
                       value!.isEmpty ? 'Title is required' : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.spacing16),
 
                 // Report Description
                 TextFormField(
@@ -95,7 +91,7 @@ class _ReportFormViewState extends State<ReportFormView> {
                   validator: (value) =>
                       value!.isEmpty ? 'Description is required' : null,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppTheme.spacing24),
 
                 // Submit Button
                 Center(
@@ -103,15 +99,16 @@ class _ReportFormViewState extends State<ReportFormView> {
                     onPressed: _isSubmitting ? null : _submitReport,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 15),
+                          horizontal: AppTheme.spacing32,
+                          vertical: AppTheme.spacing16),
                     ),
                     child: _isSubmitting
                         ? const CircularProgressIndicator(
                             color: Colors.white,
                           )
-                        : const Text(
+                        : Text(
                             'Submit Report',
-                            style: TextStyle(fontSize: 18),
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
                   ),
                 ),

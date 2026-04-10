@@ -5,12 +5,13 @@ import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
 
   @override
-  _RegisterViewState createState() => _RegisterViewState();
+  State<RegisterView> createState() => _RegisterViewState();
 }
 
 class _RegisterViewState extends State<RegisterView> {
@@ -22,7 +23,11 @@ class _RegisterViewState extends State<RegisterView> {
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _sellerNameController = TextEditingController();
   final TextEditingController _storeNameController = TextEditingController();
-  // Function to save user data
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+
   Future<void> saveUserData(
       User user, String name, String phoneNumber, String storeName) async {
     await locator<IUserProfileService>().createUserDocument(user.uid, {
@@ -57,211 +62,304 @@ class _RegisterViewState extends State<RegisterView> {
   }
 
   void _register() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        UserCredential userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
+    if (!_formKey.currentState!.validate()) return;
 
-        User user = userCredential.user!;
-        await saveUserData(user, _sellerNameController.text,
-            _phoneNumberController.text, _storeNameController.text);
+    setState(() => _isLoading = true);
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-        // User created successfully
+      User user = userCredential.user!;
+      await saveUserData(user, _sellerNameController.text.trim(),
+          _phoneNumberController.text.trim(), _storeNameController.text.trim());
+
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration Successful')),
+          const SnackBar(
+            content: Text('Registration successful! Please sign in.'),
+          ),
         );
 
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => LoginView()));
-      } on FirebaseAuthException catch (e) {
-        String message;
-        if (e.code == 'weak-password') {
-          message = 'The password provided is too weak.';
-        } else if (e.code == 'email-already-in-use') {
-          message = 'The account already exists for that email.';
-        } else {
-          message = 'An error occurred: ${e.message}. Please try again.';
-        }
+            MaterialPageRoute(builder: (context) => const LoginView()));
+      }
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'weak-password') {
+        message =
+            'Password is too weak. Use at least 6 characters with letters and numbers.';
+      } else if (e.code == 'email-already-in-use') {
+        message =
+            'An account with this email already exists. Try signing in instead.';
+      } else {
+        message = 'Registration failed. Please check your details and try again.';
+      }
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
-      } catch (e) {
-        // Handle other errors
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An error occurred: $e. Please try again.')),
+          const SnackBar(
+            content:
+                Text('Registration failed. Please check your details and try again.'),
+          ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        titleTextStyle: const TextStyle(
-            color: AppColors.darkColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold),
-        automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              Image.asset(
-                'assets/images/logo.png',
-                height: 150,
-              ),
-              TextFormField(
-                controller: _sellerNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
+      backgroundColor: theme.colorScheme.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: AppTheme.spacing24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppTheme.spacing32),
+
+                // Logo
+                Center(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    height: 96,
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
+                const SizedBox(height: AppTheme.spacing16),
+
+                // Heading
+                Text(
+                  'Create your account',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.spacing4),
+                Text(
+                  'Start selling near-expiry food today',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.spacing32),
+
+                // Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Name field
+                      TextFormField(
+                        controller: _sellerNameController,
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Full name',
+                          prefixIcon: Icon(Icons.person_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter your full name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppTheme.spacing16),
+
+                      // Email field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Email address',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter your email address';
+                          }
+                          if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                              .hasMatch(value.trim())) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppTheme.spacing16),
+
+                      // Password field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(
+                                  () => _obscurePassword = !_obscurePassword);
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter a password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppTheme.spacing16),
+
+                      // Confirm password field
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm password',
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() => _obscureConfirmPassword =
+                                  !_obscureConfirmPassword);
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppTheme.spacing16),
+
+                      // Phone number field
+                      TextFormField(
+                        controller: _phoneNumberController,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: 'Phone number',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                          hintText: '09XX XXX XXXX',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter your phone number';
+                          }
+                          if (value.trim().length < 11) {
+                            return 'Phone number must be at least 11 digits';
+                          }
+                          if (!value.trim().startsWith('09')) {
+                            return 'Phone number must start with 09';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppTheme.spacing24),
+
+                      // Sign Up button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _register,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Text('Create Account'),
+                      ),
+                    ],
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
+
+                const SizedBox(height: AppTheme.spacing16),
+
+                // Terms text
+                Text(
+                  "By signing up, you agree to Unshelf's Terms of Use and Privacy Policy.",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall,
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password Confirmation',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  } else if (value != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _phoneNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.lightColor),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  } else if (value.length < 11) {
-                    return 'Phone number must be at least 11 characters';
-                  } else if (value[0] != '0' && value[1] != '9') {
-                    return 'Phone number must start with 09';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _register,
-                style: const ButtonStyle(
-                  backgroundColor:
-                      WidgetStatePropertyAll(AppColors.primaryColor),
-                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                ),
-                child: const Text('Sign Up'),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "By signing up, you agree to Unshelf's Terms of Use and Privacy Policy.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.primaryColor,
-                  fontSize: 11,
-                ),
-              ),
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Already have an account?'),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginView()),
-                      );
-                    },
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(color: AppColors.primaryColor),
+
+                const SizedBox(height: AppTheme.spacing24),
+
+                // Sign in link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account?',
+                      style: theme.textTheme.bodyMedium,
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginView()),
+                        );
+                      },
+                      child: const Text('Sign In'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spacing16),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _phoneNumberController.dispose();
+    _sellerNameController.dispose();
+    _storeNameController.dispose();
+    super.dispose();
   }
 }

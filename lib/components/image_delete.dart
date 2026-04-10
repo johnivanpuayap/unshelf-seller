@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:unshelf_seller/utils/colors.dart';
 
 class ImageWithDelete extends StatefulWidget {
   final Uint8List imageData;
@@ -50,7 +51,7 @@ class _ImageWithDeleteState extends State<ImageWithDelete> {
                     color: Colors.black54,
                     child: Center(
                       child: IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
+                        icon: Icon(Icons.delete, color: AppColors.error),
                         onPressed: widget.onDelete,
                       ),
                     ),

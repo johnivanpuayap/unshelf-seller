@@ -1,18 +1,24 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:unshelf_seller/components/empty_state.dart';
+import 'package:unshelf_seller/components/product_card.dart';
 import 'package:unshelf_seller/models/bundle_model.dart';
 import 'package:unshelf_seller/models/product_model.dart';
-import 'package:unshelf_seller/viewmodels/listing_viewmodel.dart';
-import 'package:unshelf_seller/views/product_details_view.dart';
-import 'package:unshelf_seller/views/add_product_view.dart';
-import 'package:unshelf_seller/views/select_products_view.dart';
-import 'package:unshelf_seller/views/edit_product_view.dart';
-import 'package:unshelf_seller/views/edit_bundle_view.dart';
-import 'package:unshelf_seller/views/bundle_details_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:unshelf_seller/utils/theme.dart';
+import 'package:unshelf_seller/viewmodels/listing_viewmodel.dart';
+import 'package:unshelf_seller/views/add_product_view.dart';
+import 'package:unshelf_seller/views/bundle_details_view.dart';
+import 'package:unshelf_seller/views/edit_bundle_view.dart';
+import 'package:unshelf_seller/views/edit_product_view.dart';
+import 'package:unshelf_seller/views/product_details_view.dart';
+import 'package:unshelf_seller/views/select_products_view.dart';
 
 class ListingsView extends StatefulWidget {
+  const ListingsView({super.key});
+
   @override
   State<ListingsView> createState() => _ListingsViewState();
 }
@@ -34,311 +40,449 @@ class _ListingsViewState extends State<ListingsView> {
   }
 
   void _onSearchChanged() {
-    final searchQuery = _searchController.text;
     Provider.of<ListingViewModel>(context, listen: false)
-        .updateSearchQuery(searchQuery);
+        .updateSearchQuery(_searchController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _buildBody(context),
-      floatingActionButton: _buildFloatingActionButton(context),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
-    return Column(
-      children: [
-        // Search Bar and Filters
-        Padding(
-          padding: const EdgeInsets.only(
-            top: 10,
-            left: 18,
-            right: 20,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width * 0.65,
-                height: 35,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  autofocus: false,
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: const BorderSide(color: Colors.grey),
-                    ),
-                    contentPadding: const EdgeInsets.only(top: 8),
-                  ),
-                  style: const TextStyle(fontSize: 14),
-                  onChanged: (query) {
-                    _onSearchChanged();
-                  },
-                ),
-              ),
-              Consumer<ListingViewModel>(
-                builder: (context, viewModel, _) {
-                  return DropdownButton<String>(
-                    value: viewModel.filter,
-                    underline: const SizedBox(),
-                    icon: const Icon(Icons.filter_list,
-                        color: AppColors.darkColor),
-                    onChanged: (String? value) {
-                      if (value != null) {
-                        viewModel.setFilter(value);
-                      }
-                    },
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'All',
-                        child: Text('All'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Bundles',
-                        child: Text('Bundles'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Products',
-                        child: Text('Products'),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Consumer<ListingViewModel>(
-            builder: (context, viewModel, _) {
-              if (viewModel.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (viewModel.filteredItems.isEmpty) {
-                return _buildEmptyState(viewModel.filter);
-              }
-
-              return ListView.builder(
-                itemCount: viewModel.filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = viewModel.filteredItems[index];
-                  return _buildItemCard(context, item);
-                },
-              );
+      body: Column(
+        children: [
+          _SearchBar(
+            controller: _searchController,
+            onClear: () {
+              _searchController.clear();
+              _onSearchChanged();
             },
           ),
-        ),
-      ],
-    );
-  }
+          _FilterRow(),
+          Expanded(
+            child: Consumer<ListingViewModel>(
+              builder: (context, viewModel, _) {
+                if (viewModel.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-  Widget _buildEmptyState(String filter) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.shopping_cart, size: 80, color: Colors.grey),
-          const SizedBox(height: 16),
-          if (filter == 'Products')
-            const Text(
-              'No products found',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            )
-          else if (filter == 'Bundles')
-            const Text(
-              'No bundles found',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            )
-          else
-            const Text(
-              'No listings found',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-        ],
-      ),
-    );
-  }
+                if (viewModel.filteredItems.isEmpty) {
+                  return _buildEmptyState(context, viewModel.filter);
+                }
 
-  Widget _buildItemCard(BuildContext context, dynamic item) {
-    final itemId = item.id;
-    final itemName = item.name;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      elevation: 4.0,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(8.0),
-        leading: Image.network(
-          item.mainImageUrl,
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-        ),
-        title:
-            Text(itemName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        trailing: _buildActionButtons(context, item),
-        onTap: () {
-          if (item is BundleModel) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => BundleDetailsView(bundleId: itemId),
-              ),
-            );
-          } else if (item is ProductModel) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProductDetailsView(productId: itemId),
-              ),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context, dynamic item) {
-    final itemId = item.id;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.edit, color: AppColors.darkColor),
-          onPressed: () {
-            if (item is ProductModel) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditProductView(
-                    product: item,
-                    onProductAdded: () {
-                      Provider.of<ListingViewModel>(context, listen: false)
-                          .fetchItems();
+                return RefreshIndicator(
+                  onRefresh: () => viewModel.fetchItems(),
+                  color: AppColors.primaryColor,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing16,
+                      vertical: AppTheme.spacing8,
+                    ),
+                    itemCount: viewModel.filteredItems.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppTheme.spacing8),
+                    itemBuilder: (context, index) {
+                      final item = viewModel.filteredItems[index];
+                      return _buildProductCard(context, item);
                     },
                   ),
-                ),
-              );
-            } else if (item is BundleModel) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditBundleView(bundleId: itemId),
-                ),
-              );
-            }
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete, color: AppColors.warningColor),
-          onPressed: () async {
-            final confirmDelete = await showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: const Text("Confirm Deletion"),
-                  content:
-                      const Text("Are you sure you want to delete this item?"),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text("Cancel"),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text("Delete",
-                          style: TextStyle(color: AppColors.warningColor)),
-                    ),
-                  ],
                 );
-              },
-            );
-            if (confirmDelete == true) {
-              await Provider.of<ListingViewModel>(context, listen: false)
-                  .deleteItem(itemId, item is ProductModel);
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFloatingActionButton(BuildContext context) {
-    return Consumer<ListingViewModel>(
-      builder: (context, viewModel, _) {
-        return FloatingActionButton.extended(
-          onPressed: () => _showAddItemOptions(context, viewModel),
-          tooltip: 'Add Item',
-          backgroundColor: AppColors.primaryColor,
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text('Add Item', style: TextStyle(color: Colors.white)),
-        );
-      },
-    );
-  }
-
-  void _showAddItemOptions(BuildContext context, ListingViewModel viewModel) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (BuildContext context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading:
-                  const Icon(Icons.add_circle, color: AppColors.primaryColor),
-              title: const Text(
-                'Add Product',
-                style: TextStyle(color: AppColors.primaryColor),
-              ),
-              onTap: () async {
-                Navigator.pop(context); // Close bottom sheet
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddProductView(
-                      onProductAdded: () {
-                        Provider.of<ListingViewModel>(context, listen: false)
-                            .fetchItems();
-                      },
-                    ),
-                  ),
-                );
-                viewModel.fetchItems();
               },
             ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.gift,
-                  color: AppColors.primaryColor),
-              title: const Text(
-                'Add Product Bundle',
-                style: TextStyle(color: AppColors.primaryColor),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddItemSheet(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Item'),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, String filter) {
+    final String title;
+    final String subtitle;
+
+    switch (filter) {
+      case 'Products':
+        title = 'No products yet';
+        subtitle = 'Add your first product to start selling.';
+      case 'Bundles':
+        title = 'No bundles yet';
+        subtitle = 'Create a bundle to offer grouped discounts.';
+      default:
+        title = 'No listings yet';
+        subtitle = 'Add your first product to start selling.';
+    }
+
+    return EmptyState(
+      icon: Icons.storefront_outlined,
+      title: title,
+      subtitle: subtitle,
+      actionLabel: 'Add Product',
+      onAction: () => _showAddItemSheet(context),
+    );
+  }
+
+  Widget _buildProductCard(BuildContext context, dynamic item) {
+    final isProduct = item is ProductModel;
+
+    return ProductCard(
+      name: item.name,
+      imageUrl: item.mainImageUrl,
+      category: item.category,
+      onTap: () {
+        if (item is BundleModel) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BundleDetailsView(bundleId: item.id),
+            ),
+          );
+        } else if (item is ProductModel) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailsView(productId: item.id),
+            ),
+          );
+        }
+      },
+      onEdit: () {
+        if (item is ProductModel) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EditProductView(
+                product: item,
+                onProductAdded: () {
+                  Provider.of<ListingViewModel>(context, listen: false)
+                      .fetchItems();
+                },
               ),
-              onTap: () async {
-                Navigator.pop(context);
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SelectProductsView()),
-                );
-                viewModel.fetchItems();
-              },
+            ),
+          );
+        } else if (item is BundleModel) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EditBundleView(bundleId: item.id),
+            ),
+          );
+        }
+      },
+      onDelete: () => _confirmDelete(context, item.id, isProduct),
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    String itemId,
+    bool isProduct,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: const Text('Are you sure you want to delete this item?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: AppColors.error),
+              ),
             ),
           ],
         );
       },
+    );
+
+    if (confirmed == true && context.mounted) {
+      await Provider.of<ListingViewModel>(context, listen: false)
+          .deleteItem(itemId, isProduct);
+    }
+  }
+
+  void _showAddItemSheet(BuildContext context) {
+    final viewModel = Provider.of<ListingViewModel>(context, listen: false);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusLarge),
+        ),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: AppTheme.spacing24,
+              right: AppTheme.spacing24,
+              bottom: AppTheme.spacing24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(
+                      top: AppTheme.spacing12,
+                      bottom: AppTheme.spacing24,
+                    ),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusFull),
+                    ),
+                  ),
+                ),
+
+                Text(
+                  'What would you like to add?',
+                  style: Theme.of(sheetContext).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: AppTheme.spacing16),
+
+                // Add Product option
+                _AddOptionTile(
+                  icon: Icons.add_circle_outline,
+                  title: 'Product',
+                  description: 'A single item with batches and pricing.',
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddProductView(
+                          onProductAdded: () => viewModel.fetchItems(),
+                        ),
+                      ),
+                    );
+                    viewModel.fetchItems();
+                  },
+                ),
+                const SizedBox(height: AppTheme.spacing8),
+
+                // Add Bundle option
+                _AddOptionTile(
+                  icon: CupertinoIcons.gift,
+                  title: 'Product Bundle',
+                  description:
+                      'Group multiple products into a discounted pack.',
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SelectProductsView(),
+                      ),
+                    );
+                    viewModel.fetchItems();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Search Bar ─────────────────────────────────────────────────────────────
+
+class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onClear;
+
+  const _SearchBar({
+    required this.controller,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing16,
+        vertical: AppTheme.spacing8,
+      ),
+      child: SizedBox(
+        height: AppTheme.minTouchTarget,
+        child: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            return TextField(
+              controller: controller,
+              autofocus: false,
+              decoration: InputDecoration(
+                hintText: 'Search listings...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: value.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: onClear,
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusMedium),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusMedium),
+                  borderSide: const BorderSide(
+                    color: AppColors.primaryColor,
+                    width: 2,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Filter Row ─────────────────────────────────────────────────────────────
+
+class _FilterRow extends StatelessWidget {
+  static const _filters = ['All', 'Products', 'Bundles'];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Consumer<ListingViewModel>(
+      builder: (context, viewModel, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing16,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: AppTheme.spacing8,
+                  children: _filters.map((label) {
+                    final selected = viewModel.filter == label;
+                    return ChoiceChip(
+                      label: Text(label),
+                      selected: selected,
+                      onSelected: (_) => viewModel.setFilter(label),
+                      selectedColor:
+                          AppColors.primaryColor.withValues(alpha: 0.15),
+                      labelStyle: theme.textTheme.labelLarge?.copyWith(
+                        color: selected
+                            ? AppColors.primaryColor
+                            : AppColors.textSecondary,
+                      ),
+                      showCheckmark: false,
+                      materialTapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }).toList(),
+                ),
+              ),
+              Text(
+                '(${viewModel.filteredItems.length} '
+                '${viewModel.filteredItems.length == 1 ? 'item' : 'items'})',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Add Option Tile ────────────────────────────────────────────────────────
+
+class _AddOptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  const _AddOptionTile({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing8,
+          vertical: AppTheme.spacing12,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: AppTheme.spacing48,
+              height: AppTheme.spacing48,
+              decoration: BoxDecoration(
+                color: AppColors.lightColor,
+                borderRadius:
+                    BorderRadius.circular(AppTheme.radiusMedium),
+              ),
+              child: Icon(icon, color: AppColors.primaryColor),
+            ),
+            const SizedBox(width: AppTheme.spacing16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textHint,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

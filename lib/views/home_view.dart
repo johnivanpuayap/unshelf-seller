@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'package:unshelf_seller/components/chat_screen.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/views/dashboard_view.dart';
 import 'package:unshelf_seller/views/orders_view.dart';
 import 'package:unshelf_seller/views/listings_view.dart';
@@ -18,9 +20,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
-  int _unseenCount = 0;
 
-  // List of screens to display
   final List<Widget> _screens = [
     const DashboardView(),
     const OrdersView(),
@@ -28,17 +28,9 @@ class _HomeViewState extends State<HomeView> {
     const StoreView(),
   ];
 
-  final List<String> _titles = [
-    'Dashboard',
-    "Orders",
-    'Listings',
-    'Profile',
-  ];
-
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<HomeViewModel>(context, listen: false).fetchNotifications();
     });
@@ -46,133 +38,125 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<HomeViewModel>(context);
+    final viewModel = context.watch<HomeViewModel>();
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.primaryColor,
-        automaticallyImplyLeading: _buildLeadingIcon() == null,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: _buildLeadingIcon(), // Custom leading icon
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: AppTheme.elevationNone,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: AppTheme.spacing16,
+        title: Text(
+          'Unshelf Seller',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        title: null,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsView(),
-                  ),
-                );
-              },
-              child: Stack(
-                children: [
-                  const Icon(Icons.notifications,
-                      size: 30, color: Colors.black),
-                  if (viewModel.unseenCount > 0)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Center(
-                          child: Text(
-                            _unseenCount.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+          // Chat icon
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ChatScreen()),
+              );
+            },
+            icon: const Icon(Icons.chat_outlined),
+            color: AppColors.textSecondary,
+            tooltip: 'Chat',
+            iconSize: 24,
+            constraints: const BoxConstraints(
+              minWidth: AppTheme.minTouchTarget,
+              minHeight: AppTheme.minTouchTarget,
             ),
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
-          child: Container(
-            color: AppColors.lightColor,
-            height: 4.0,
-          ),
-        ),
-        flexibleSpace: SafeArea(
-          child: Align(
+          // Notification bell with red dot
+          Stack(
             alignment: Alignment.center,
-            child: Text(
-              _titles[_selectedIndex],
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            children: [
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsView(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.notifications_outlined),
+                color: AppColors.textSecondary,
+                tooltip: 'Notifications',
+                iconSize: 24,
+                constraints: const BoxConstraints(
+                  minWidth: AppTheme.minTouchTarget,
+                  minHeight: AppTheme.minTouchTarget,
+                ),
               ),
-            ),
+              if (viewModel.unseenCount > 0)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
+          const SizedBox(width: AppTheme.spacing8),
+        ],
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: KeyedSubtree(
+          key: ValueKey<int>(_selectedIndex),
+          child: _screens[_selectedIndex],
         ),
       ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onItemTapped,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: AppTheme.elevationHigh,
+        shadowColor: Colors.black26,
+        indicatorColor: AppColors.primaryColor.withValues(alpha: 0.12),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        height: 72,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard, color: AppColors.primaryColor),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: "Orders",
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon:
+                Icon(Icons.receipt_long, color: AppColors.primaryColor),
+            label: 'Orders',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
+          NavigationDestination(
+            icon: Icon(Icons.inventory_2_outlined),
+            selectedIcon:
+                Icon(Icons.inventory_2, color: AppColors.primaryColor),
             label: 'Listings',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.store),
+          NavigationDestination(
+            icon: Icon(Icons.store_outlined),
+            selectedIcon: Icon(Icons.store, color: AppColors.primaryColor),
             label: 'Store',
           ),
         ],
-        currentIndex: _selectedIndex,
-        unselectedItemColor: Colors.grey,
-        selectedItemColor: AppColors.primaryColor,
-        onTap: _onItemTapped,
       ),
     );
-  }
-
-  Widget? _buildLeadingIcon() {
-    switch (_selectedIndex) {
-      case 0: // Dashboard
-        return IconButton(
-          icon: const Icon(
-            Icons.chat,
-            size: 30,
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(),
-              ),
-            );
-          },
-        );
-      default:
-        return null;
-    }
   }
 
   void _onItemTapped(int index) {

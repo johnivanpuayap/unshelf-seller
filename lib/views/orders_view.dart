@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:unshelf_seller/components/empty_state.dart';
+import 'package:unshelf_seller/components/order_card.dart';
+import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/views/order_details_view.dart';
-import 'package:unshelf_seller/utils/colors.dart';
 
 class OrdersView extends StatefulWidget {
   const OrdersView({super.key});
@@ -12,210 +16,249 @@ class OrdersView extends StatefulWidget {
 }
 
 class _OrdersViewState extends State<OrdersView> {
+  static const _statusFilters = [
+    'All',
+    'Pending',
+    'Processing',
+    'Ready',
+    'Completed',
+    'Cancelled',
+  ];
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel = Provider.of<OrderViewModel>(context, listen: false);
-      viewModel.fetchOrders();
+      Provider.of<OrderViewModel>(context, listen: false).fetchOrders();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<OrderViewModel>(context);
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: Column(
         children: [
-          Container(
-            alignment: Alignment.center,
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _buildFilterButton('All', viewModel),
-                  _buildFilterButton('Pending', viewModel),
-                  _buildFilterButton('Processing', viewModel),
-                  _buildFilterButton('Ready', viewModel),
-                  _buildFilterButton('Completed', viewModel),
-                  _buildFilterButton('Cancelled', viewModel),
-                ],
-              ),
-            ),
-          ),
-
-          // Orders List
-          Expanded(
-            child: Consumer<OrderViewModel>(
-              builder: (context, viewModel, child) {
-                if (viewModel.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final filteredOrders = viewModel.filteredOrders;
-
-                if (filteredOrders.isEmpty) {
-                  final statusMessages = {
-                    'Pending': 'No pending orders',
-                    'Processing': 'No orders in processing.',
-                    'Ready': 'No orders that are ready',
-                    'Completed': 'No completed orders.',
-                    'Cancelled': 'No cancelled orders',
-                  };
-
-                  String message = statusMessages[viewModel.currentStatus] ??
-                      'No orders found.';
-                  return Center(child: Text(message));
-                }
-
-                return ListView.builder(
-                  itemCount: filteredOrders.length,
-                  itemBuilder: (context, index) {
-                    final order = filteredOrders[index];
-                    final isDarkBackground = index % 2 == 0;
-
-                    return GestureDetector(
-                      onTap: () {
-                        viewModel.selectOrder(order.id);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                OrderDetailsView(orderId: order.id),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        color: isDarkBackground
-                            ? Colors.grey[200]
-                            : Colors.grey[100],
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Order ID: ${order.orderId}',
-                                      style: const TextStyle(
-                                        fontSize: 14.0,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4.0),
-                                    Text(
-                                      order.createdAt
-                                          .toDate()
-                                          .toLocal()
-                                          .toString()
-                                          .split(' ')[0],
-                                      style: TextStyle(
-                                        fontSize: 12.0,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4.0),
-                                    Text(
-                                      'Status: ${order.status}',
-                                      style: TextStyle(
-                                        fontSize: 12.0,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                RichText(
-                                  text: TextSpan(
-                                    style: const TextStyle(
-                                      fontSize: 18.0,
-                                      color: AppColors.palmLeaf,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    children: [
-                                      const TextSpan(
-                                        text: '\u20B1 ', // Peso symbol
-                                        style: TextStyle(fontFamily: 'Roboto'),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                            '${order.totalPrice.toStringAsFixed(2)}',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 4.0, horizontal: 12.0),
-                                  decoration: BoxDecoration(
-                                    color: order.isPaid
-                                        ? AppColors.palmLeaf
-                                        : AppColors.watermelonRed,
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Text(
-                                    order.isPaid ? 'Paid' : 'Unpaid',
-                                    style: const TextStyle(
-                                      fontSize: 12.0,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          )
+          _buildFilterChips(theme),
+          _buildSortToggle(theme),
+          const Divider(height: 1),
+          Expanded(child: _buildOrderList(theme)),
         ],
       ),
     );
   }
 
-  Widget _buildFilterButton(String status, OrderViewModel viewModel) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-      child: TextButton(
-        style: TextButton.styleFrom(
-          minimumSize: const Size(40, 20),
-          backgroundColor: viewModel.currentStatus == status
-              ? AppColors.darkColor
-              : Colors.grey[200],
-          foregroundColor:
-              viewModel.currentStatus == status ? Colors.white : Colors.black,
-        ),
-        onPressed: () {
-          setState(() {
-            viewModel.currentStatus = status;
-            viewModel.filterOrdersByStatus(viewModel.currentStatus);
-          });
-        },
-        child: Text(
-          status,
-          style: const TextStyle(fontSize: 9.0),
-        ),
-      ),
+  // ─── Status filter chips ────────────────────────────────────────────────
+
+  Widget _buildFilterChips(ThemeData theme) {
+    return Consumer<OrderViewModel>(
+      builder: (context, viewModel, _) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing12,
+            vertical: AppTheme.spacing8,
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _statusFilters.map((status) {
+                final isSelected = viewModel.currentStatus == status;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: AppTheme.spacing8),
+                  child: ChoiceChip(
+                    label: Text(status),
+                    selected: isSelected,
+                    onSelected: (_) {
+                      viewModel.currentStatus = status;
+                      viewModel.filterOrdersByStatus(status);
+                    },
+                    selectedColor: AppColors.primaryColor,
+                    backgroundColor: AppColors.surface,
+                    labelStyle: theme.textTheme.labelLarge?.copyWith(
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                    ),
+                    side: isSelected
+                        ? BorderSide.none
+                        : const BorderSide(color: AppColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusFull),
+                    ),
+                    showCheckmark: false,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing12,
+                      vertical: AppTheme.spacing4,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
+
+  // ─── Sort toggle ────────────────────────────────────────────────────────
+
+  Widget _buildSortToggle(ThemeData theme) {
+    return Consumer<OrderViewModel>(
+      builder: (context, viewModel, _) {
+        final isLatestFirst = viewModel.sortOrder == 'Descending';
+
+        return InkWell(
+          onTap: () {
+            viewModel.sortOrder = isLatestFirst ? 'Ascending' : 'Descending';
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing16,
+              vertical: AppTheme.spacing8,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isLatestFirst
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppTheme.spacing4),
+                Text(
+                  isLatestFirst ? 'Latest first' : 'Oldest first',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Order list ─────────────────────────────────────────────────────────
+
+  Widget _buildOrderList(ThemeData theme) {
+    return Consumer<OrderViewModel>(
+      builder: (context, viewModel, _) {
+        if (viewModel.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final orders = viewModel.filteredOrders;
+
+        if (orders.isEmpty) {
+          return _buildEmptyState(viewModel.currentStatus);
+        }
+
+        return RefreshIndicator(
+          color: AppColors.primaryColor,
+          onRefresh: viewModel.fetchOrders,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing16,
+              vertical: AppTheme.spacing8,
+            ),
+            itemCount: orders.length,
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: AppTheme.spacing4),
+            itemBuilder: (context, index) {
+              final order = orders[index];
+
+              return OrderCard(
+                orderId: order.orderId,
+                buyerName: order.buyerName,
+                status: order.status,
+                totalPrice: order.totalPrice,
+                createdAt: order.createdAt.toDate().toLocal(),
+                itemCount: order.items.length,
+                onTap: () {
+                  viewModel.selectOrder(order.id);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OrderDetailsView(orderId: order.id),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Empty state per filter ─────────────────────────────────────────────
+
+  Widget _buildEmptyState(String status) {
+    final config = _emptyStateConfig(status);
+
+    return EmptyState(
+      icon: config.icon,
+      title: config.title,
+      subtitle: config.subtitle,
+    );
+  }
+
+  _EmptyConfig _emptyStateConfig(String status) {
+    switch (status) {
+      case 'Pending':
+        return const _EmptyConfig(
+          icon: Icons.hourglass_empty_rounded,
+          title: 'No pending orders',
+          subtitle: 'New orders from buyers will appear here.',
+        );
+      case 'Processing':
+        return const _EmptyConfig(
+          icon: Icons.sync_rounded,
+          title: 'No orders in processing',
+          subtitle: 'Approved orders being prepared will show here.',
+        );
+      case 'Ready':
+        return const _EmptyConfig(
+          icon: Icons.check_circle_outline_rounded,
+          title: 'No orders ready',
+          subtitle: 'Orders ready for pickup will appear here.',
+        );
+      case 'Completed':
+        return const _EmptyConfig(
+          icon: Icons.done_all_rounded,
+          title: 'No completed orders',
+          subtitle: 'Fulfilled orders will be listed here.',
+        );
+      case 'Cancelled':
+        return const _EmptyConfig(
+          icon: Icons.cancel_outlined,
+          title: 'No cancelled orders',
+          subtitle: 'Cancelled orders will appear here.',
+        );
+      default:
+        return const _EmptyConfig(
+          icon: Icons.receipt_long_outlined,
+          title: 'No orders yet',
+          subtitle: 'Orders from buyers will show up here.',
+        );
+    }
+  }
+}
+
+class _EmptyConfig {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _EmptyConfig({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 }

@@ -4,9 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // ViewModels
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
-import 'package:unshelf_seller/views/balance_overview_view.dart';
 
 // Views
+import 'package:unshelf_seller/views/balance_overview_view.dart';
 import 'package:unshelf_seller/views/edit_store_schedule_view.dart';
 import 'package:unshelf_seller/views/edit_store_location_view.dart';
 import 'package:unshelf_seller/views/edit_store_profile_view.dart';
@@ -19,8 +19,12 @@ import 'package:unshelf_seller/views/store_analytics_view.dart';
 import 'package:unshelf_seller/views/inventory_view.dart';
 import 'package:unshelf_seller/views/report_view.dart';
 
+// Components
+import 'package:unshelf_seller/components/section_header.dart';
+
 // Utils
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class StoreView extends StatefulWidget {
   const StoreView({super.key});
@@ -30,8 +34,6 @@ class StoreView extends StatefulWidget {
 }
 
 class _StoreViewState extends State<StoreView> {
-  bool _isGeneralActionsExpanded = false;
-
   @override
   void initState() {
     super.initState();
@@ -49,191 +51,322 @@ class _StoreViewState extends State<StoreView> {
     if (viewModel.isLoading ||
         viewModel.storeDetails == null ||
         viewModel.userProfile == null) {
-      return Scaffold(body: _buildLoading());
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStoreCard(viewModel),
-              const SizedBox(height: 16),
-              _buildSectionTitle('Store Management'),
-              _buildStoreManagementSection(context, viewModel),
-              const SizedBox(height: 20),
-              _buildExpandableGeneralActions(context),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return const Center(child: CircularProgressIndicator());
-  }
-
-  Widget _buildStoreCard(StoreViewModel viewModel) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: ClipOval(
-          child: viewModel.storeDetails?.storeImageUrl == ''
-              ? _buildDefaultStoreIcon()
-              : Image.network(
-                  viewModel.storeDetails?.storeImageUrl ?? '',
-                  width: 60.0,
-                  height: 60.0,
-                  fit: BoxFit.cover,
-                ),
-        ),
-        title: Text(
-          viewModel.storeDetails?.storeName ?? 'Store Name',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Followers: ${viewModel.storeDetails?.storeFollowers ?? 0}'),
-            Text(
-                'Rating: ${viewModel.storeDetails?.storeRating?.toString() ?? '0.0'}'),
+            // Store Header
+            _buildStoreHeader(context, viewModel),
+
+            const Divider(),
+
+            // Store Management Section
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppTheme.spacing8),
+                  const SectionHeader(title: 'Store Management'),
+                  _buildManagementCard(context, viewModel),
+
+                  const SizedBox(height: AppTheme.spacing24),
+
+                  // Account Section
+                  const SectionHeader(title: 'Account'),
+                  _buildAccountCard(context, viewModel),
+
+                  const SizedBox(height: AppTheme.spacing32),
+
+                  // Logout Button
+                  _buildLogoutButton(context),
+
+                  const SizedBox(height: AppTheme.spacing32),
+                ],
+              ),
+            ),
           ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () => _navigateTo(
-              EditStoreProfileView(storeDetails: viewModel.storeDetails!)),
         ),
       ),
     );
   }
 
-  Widget _buildDefaultStoreIcon() {
-    return Container(
-      color: Colors.grey,
-      width: 60.0,
-      height: 60.0,
-      child: const Icon(Icons.store, color: Colors.white, size: 30.0),
-    );
-  }
+  Widget _buildStoreHeader(BuildContext context, StoreViewModel viewModel) {
+    final theme = Theme.of(context);
+    final store = viewModel.storeDetails!;
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    );
-  }
-
-  Widget _buildStoreManagementSection(
-      BuildContext context, StoreViewModel viewModel) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    return Padding(
+      padding: const EdgeInsets.all(AppTheme.spacing16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Performance
-          _buildListTile(
-            Icons.analytics,
-            'Store Analytics',
-            'View store performance',
-            () => _navigateTo(StoreAnalyticsView()),
-          ),
+          Row(
+            children: [
+              // Store Avatar
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: AppColors.lightColor,
+                backgroundImage:
+                    (store.storeImageUrl != null && store.storeImageUrl!.isNotEmpty)
+                        ? NetworkImage(store.storeImageUrl!)
+                        : null,
+                child:
+                    (store.storeImageUrl == null || store.storeImageUrl!.isEmpty)
+                        ? Icon(
+                            Icons.store,
+                            size: 32,
+                            color: theme.colorScheme.primary,
+                          )
+                        : null,
+              ),
 
-          _buildListTile(
-            Icons.analytics,
-            'Product Analytics',
-            'View product performance',
-            () => _navigateTo(ProductAnalyticsView()),
-          ),
+              const SizedBox(width: AppTheme.spacing16),
 
-          // Orders
-          _buildListTile(
-            Icons.history,
-            'Order History',
-            'View store orders',
-            () => _navigateTo(OrderHistoryView()),
+              // Store Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      store.storeName.isNotEmpty ? store.storeName : 'My Store',
+                      style: theme.textTheme.headlineMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppTheme.spacing4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          size: 16,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: AppTheme.spacing4),
+                        Text(
+                          store.storeRating?.toStringAsFixed(1) ?? '0.0',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(width: AppTheme.spacing8),
+                        Text(
+                          '\u2022',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: AppTheme.spacing8),
+                        Text(
+                          '${store.storeFollowers ?? 0} followers',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-
-          // Inventory
-          _buildListTile(
-            Icons.inventory,
-            'Store Inventory',
-            'Manage products and stocks',
-            () => _navigateTo(InventoryView()),
-          ),
-
-          // Store Settings
-          _buildListTile(
-            Icons.access_time,
-            'Business Hours',
-            'Manage business hours',
-            () => _navigateTo(
-                EditStoreScheduleView(storeDetails: viewModel.storeDetails!)),
-          ),
-          _buildListTile(
-            Icons.location_on,
-            'Store Location',
-            'Edit store location',
-            () => _navigateTo(
-                EditStoreLocationView(storeDetails: viewModel.storeDetails!)),
-          ),
-
-          // Financials
-          _buildListTile(
-            Icons.wallet,
-            'Wallet',
-            'Manage your earnings',
-            () => _navigateTo(const BalanceOverviewView()),
+          const SizedBox(height: AppTheme.spacing12),
+          SizedBox(
+            height: 36,
+            child: OutlinedButton.icon(
+              onPressed: () => _navigateTo(
+                EditStoreProfileView(storeDetails: viewModel.storeDetails!),
+              ),
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: Text(
+                'Edit Profile',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing16,
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildExpandableGeneralActions(BuildContext context) {
-    return ExpansionTile(
-      initiallyExpanded: _isGeneralActionsExpanded,
-      onExpansionChanged: (value) {
-        setState(() => _isGeneralActionsExpanded = value);
-      },
-      leading: const Icon(Icons.settings, color: Colors.black54),
-      title: const Text('General Actions',
-          style: TextStyle(fontWeight: FontWeight.bold)),
-      children: [
-        _buildListTile(
-            Icons.person,
-            'User Profile',
-            'View and edit your profile',
-            () => _navigateTo(EditUserProfileView(
-                userProfile: Provider.of<StoreViewModel>(context, listen: false)
-                    .userProfile!))),
-        _buildListTile(Icons.settings, 'Settings', 'Manage app settings',
-            () => _navigateTo(const SettingsView())),
-        _buildListTile(Icons.report, 'Report', 'Report an issue',
-            () => _navigateTo(ReportFormView())),
-        _buildListTile(Icons.logout, 'Log Out', 'Sign out from your account',
-            () async {
-          await FirebaseAuth.instance.signOut();
-          _navigateTo(LoginView(), clearStack: true);
-        }),
-      ],
+  Widget _buildManagementCard(BuildContext context, StoreViewModel viewModel) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _buildMenuTile(
+            context,
+            icon: Icons.analytics_outlined,
+            iconColor: AppColors.info,
+            title: 'Store Analytics',
+            onTap: () => _navigateTo(const StoreAnalyticsView()),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.bar_chart_outlined,
+            iconColor: AppColors.success,
+            title: 'Product Analytics',
+            onTap: () => _navigateTo(const ProductAnalyticsView()),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.receipt_long_outlined,
+            iconColor: AppColors.statusPendingText,
+            title: 'Order History',
+            onTap: () => _navigateTo(const OrderHistoryView()),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.inventory_2_outlined,
+            iconColor: AppColors.darkColor,
+            title: 'Store Inventory',
+            onTap: () => _navigateTo(InventoryView()),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.access_time_outlined,
+            iconColor: AppColors.warning,
+            title: 'Business Hours',
+            onTap: () => _navigateTo(
+              EditStoreScheduleView(storeDetails: viewModel.storeDetails!),
+            ),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.location_on_outlined,
+            iconColor: AppColors.error,
+            title: 'Store Location',
+            onTap: () => _navigateTo(
+              EditStoreLocationView(storeDetails: viewModel.storeDetails!),
+            ),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.account_balance_wallet_outlined,
+            iconColor: AppColors.primaryColor,
+            title: 'Wallet',
+            onTap: () => _navigateTo(const BalanceOverviewView()),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildListTile(
-      IconData icon, String title, String subtitle, VoidCallback onTap) {
+  Widget _buildAccountCard(BuildContext context, StoreViewModel viewModel) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _buildMenuTile(
+            context,
+            icon: Icons.person_outlined,
+            iconColor: AppColors.info,
+            title: 'Edit Profile',
+            onTap: () => _navigateTo(
+              EditUserProfileView(userProfile: viewModel.userProfile!),
+            ),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.settings_outlined,
+            iconColor: AppColors.textSecondary,
+            title: 'Settings',
+            onTap: () => _navigateTo(const SettingsView()),
+          ),
+          Divider(height: 1, indent: AppTheme.spacing16, endIndent: AppTheme.spacing16, color: theme.dividerColor),
+          _buildMenuTile(
+            context,
+            icon: Icons.flag_outlined,
+            iconColor: AppColors.warning,
+            title: 'Report Issue',
+            onTap: () => _navigateTo(ReportFormView()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuTile(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
     return ListTile(
-      leading: Icon(icon, color: AppColors.primaryColor),
-      title: Text(title,
-          style: const TextStyle(
-              color: Colors.black, fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(title, style: theme.textTheme.titleSmall),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: AppColors.textHint,
+        size: 20,
+      ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          await FirebaseAuth.instance.signOut();
+          if (context.mounted) {
+            _navigateTo(const LoginView(), clearStack: true);
+          }
+        },
+        icon: const Icon(Icons.logout, size: 18, color: AppColors.error),
+        label: Text(
+          'Log Out',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: AppColors.error,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.error,
+          side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+          minimumSize: const Size(200, AppTheme.minTouchTarget),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing24,
+            vertical: AppTheme.spacing12,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          ),
+        ),
+      ),
     );
   }
 

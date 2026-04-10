@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
@@ -13,7 +12,7 @@ import 'package:unshelf_seller/core/interfaces/i_order_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
-import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/analytics_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/batch_history_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
@@ -154,13 +153,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Unshelf',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
-        useMaterial3: true,
-        textTheme: GoogleFonts.jostTextTheme(Theme.of(context).textTheme),
-      ),
+      theme: AppTheme.lightTheme,
       home:
-          FirebaseAuth.instance.currentUser != null ? const HomeView() : LoginView(),
+          FirebaseAuth.instance.currentUser != null ? const HomeView() : const LoginView(),
     );
   }
 }

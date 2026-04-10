@@ -8,6 +8,7 @@ import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/models/store_model.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/store_schedule_viewmodel.dart';
 
 class EditStoreScheduleView extends StatelessWidget {
@@ -29,7 +30,7 @@ class EditStoreScheduleView extends StatelessWidget {
                   Navigator.pop(context);
                 }),
             body: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppTheme.spacing16),
               child: Column(
                 children: [
                   Expanded(
@@ -37,9 +38,10 @@ class EditStoreScheduleView extends StatelessWidget {
                       children: viewModel.storeSchedule.keys.map((day) {
                         bool isActive = viewModel.storeSchedule[day]!['isOpen'];
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spacing8),
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(AppTheme.spacing12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -48,9 +50,9 @@ class EditStoreScheduleView extends StatelessWidget {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(day,
-                                        style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold)),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium),
                                     Switch(
                                       value: isActive,
                                       activeThumbColor: AppColors.primaryColor,
@@ -60,7 +62,7 @@ class EditStoreScheduleView extends StatelessWidget {
                                   ],
                                 ),
                                 if (isActive) ...[
-                                  const SizedBox(height: 8.0),
+                                  const SizedBox(height: AppTheme.spacing8),
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -100,10 +102,13 @@ class EditStoreScheduleView extends StatelessWidget {
                                     ],
                                   ),
                                 ] else
-                                  const Text(
+                                  Text(
                                     'Closed all day',
-                                    style: TextStyle(
-                                        color: Colors.black, fontSize: 14),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                            color: AppColors.textPrimary),
                                   ),
                               ],
                             ),
@@ -112,7 +117,7 @@ class EditStoreScheduleView extends StatelessWidget {
                       }).toList(),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppTheme.spacing24),
                   CustomButton(
                       text: 'Save Changes',
                       onPressed: () async {
@@ -147,8 +152,8 @@ class _TimePickerButton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 4.0),
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: AppTheme.spacing4),
         ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(

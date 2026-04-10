@@ -5,7 +5,7 @@ import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/core/logger.dart';
 import 'package:unshelf_seller/models/user_model.dart';
 import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
-import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class EditUserProfileView extends StatelessWidget {
   final UserProfileModel userProfile;
@@ -29,23 +29,15 @@ class EditUserProfileView extends StatelessWidget {
           : viewModel.errorMessage != null
               ? Center(child: Text(viewModel.errorMessage!))
               : Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppTheme.spacing16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppTheme.spacing8),
                       TextFormField(
                         controller: viewModel.nameController,
                         decoration: const InputDecoration(
                           labelText: 'Name',
-                          enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -54,19 +46,11 @@ class EditUserProfileView extends StatelessWidget {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
                         controller: viewModel.emailController,
                         decoration: const InputDecoration(
                           labelText: 'Email',
-                          enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -77,19 +61,11 @@ class EditUserProfileView extends StatelessWidget {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
                         controller: viewModel.phoneController,
                         decoration: const InputDecoration(
                           labelText: 'Phone Number',
-                          enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
                         ),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
@@ -101,20 +77,12 @@ class EditUserProfileView extends StatelessWidget {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
                         controller: viewModel.passwordController,
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Password',
-                          enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -125,20 +93,12 @@ class EditUserProfileView extends StatelessWidget {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
                         controller: viewModel.confirmPasswordController,
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Confirm Password',
-                          enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.middleGreenYellow),
-                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -147,7 +107,7 @@ class EditUserProfileView extends StatelessWidget {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppTheme.spacing8),
                       Align(
                         alignment: Alignment.center,
                         child: CustomButton(

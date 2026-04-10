@@ -4,6 +4,7 @@ import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
 import 'package:unshelf_seller/models/bundle_model.dart';
 import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 class BundleDetailsView extends StatefulWidget {
   final String bundleId;
@@ -45,14 +46,15 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
 
           return SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppTheme.spacing16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Bundle Image
                   Center(
                     child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12.0),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
                         child: Image.network(
                           bundle.mainImageUrl,
                           width: 200,
@@ -60,66 +62,70 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
                           fit: BoxFit.cover,
                         )),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppTheme.spacing24),
 
                   // Name and Description
-                  _buildDetailCard('Name', bundle.name),
-                  _buildDetailCard('Description', bundle.description),
-                  _buildDetailCard('Category', bundle.category),
-                  _buildDetailCard('Price', bundle.price.toString()),
-                  _buildDetailCard('Stock', bundle.stock.toString()),
-                  _buildDetailCard('Discount', '${bundle.discount}%'),
+                  _buildDetailCard(context, 'Name', bundle.name),
+                  _buildDetailCard(context, 'Description', bundle.description),
+                  _buildDetailCard(context, 'Category', bundle.category),
+                  _buildDetailCard(context, 'Price', bundle.price.toString()),
+                  _buildDetailCard(context, 'Stock', bundle.stock.toString()),
+                  _buildDetailCard(
+                      context, 'Discount', '${bundle.discount}%'),
 
                   // Product List
-                  const SizedBox(height: 10),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12.0),
+                  const SizedBox(height: AppTheme.spacing8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: AppTheme.spacing12),
                     child: Text(
                       'Products',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryColor,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(color: AppColors.primaryColor),
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppTheme.spacing8),
                   ...bundle.items.map((item) {
                     return Card(
-                      elevation: 2,
+                      elevation: AppTheme.elevationMedium,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusSmall),
                       ),
                       child: ListTile(
                         leading: Container(
-                          width: 50, // Width of the square
+                          width: 50,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
+                            color: AppColors.border,
                             image: item['imageUrl'] != null
                                 ? DecorationImage(
                                     image: NetworkImage(
                                         item['imageUrl'].toString()),
                                     fit: BoxFit.cover)
                                 : null,
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall / 4),
                           ),
                         ),
                         title: Text(
                           item['name'].toString(),
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w500),
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
                         subtitle: Text(
                           'x ${item['quantity']} ${item['quantifier']}',
-                          style:
-                              const TextStyle(fontSize: 14, color: Colors.grey),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                       ),
                     );
                   }),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppTheme.spacing24),
                 ],
               ),
             ),
@@ -129,24 +135,24 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
     );
   }
 
-  Widget _buildDetailCard(String title, String value) {
+  Widget _buildDetailCard(BuildContext context, String title, String value) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      margin: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
+      elevation: AppTheme.elevationMedium,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(AppTheme.spacing12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(color: AppColors.textSecondary),
               ),
             ),
             if (title != 'Price')
@@ -154,9 +160,7 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
                 flex: 2,
                 child: Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
               )
             else
@@ -164,13 +168,13 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
                 flex: 2,
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 16.0,
-                      color: Colors.black,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: AppColors.textPrimary),
                     children: [
                       const TextSpan(
-                        text: '\u20B1 ', // Peso symbol
+                        text: '\u20B1 ',
                         style: TextStyle(
                           fontFamily: 'Roboto',
                         ),

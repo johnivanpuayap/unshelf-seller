@@ -20,10 +20,10 @@ class Chart extends StatefulWidget {
 }
 
 class _ChartState extends State<Chart> {
-  List<Color> gradientColors = [
-    AppColors.lightColor,
-    AppColors.primaryColor,
-  ];
+  List<Color> get gradientColors => [
+        AppColors.lightColor,
+        AppColors.primaryColor,
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +31,13 @@ class _ChartState extends State<Chart> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return SizedBox(
-      height: screenHeight * 0.25, // 25% of the screen height
+      height: screenHeight * 0.25,
       child: Padding(
         padding: EdgeInsets.symmetric(
           vertical: screenHeight * 0.02,
         ),
         child: LineChart(
-          mainData(screenWidth),
+          mainData(context, screenWidth),
         ),
       ),
     );
@@ -81,7 +81,7 @@ class _ChartState extends State<Chart> {
     );
   }
 
-  LineChartData mainData(double screenWidth) {
+  LineChartData mainData(BuildContext context, double screenWidth) {
     List<FlSpot> spots = [];
     List<DateTime> keys = widget.dataMap.keys.toList();
 
@@ -130,7 +130,8 @@ class _ChartState extends State<Chart> {
       ),
       borderData: FlBorderData(
         show: true,
-        border: Border.all(color: const Color(0xff37434d)),
+        border: Border.all(
+            color: Theme.of(context).dividerTheme.color ?? AppColors.border),
       ),
       minX: 0,
       maxX: widget.maxXValue - 1,
