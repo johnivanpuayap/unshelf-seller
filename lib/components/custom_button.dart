@@ -165,7 +165,7 @@ class CustomButton extends StatelessWidget {
   Size _minSize() {
     switch (_size) {
       case _ButtonSize.small:
-        return const Size(0, 36);
+        return const Size(0, AppTheme.minTouchTarget);
       case _ButtonSize.large:
         return const Size(double.infinity, 56);
       case _ButtonSize.regular:

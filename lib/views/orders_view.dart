@@ -110,33 +110,35 @@ class _OrdersViewState extends State<OrdersView> {
       builder: (context, viewModel, _) {
         final isLatestFirst = viewModel.sortOrder == 'Descending';
 
-        return InkWell(
-          onTap: () {
-            viewModel.sortOrder = isLatestFirst ? 'Ascending' : 'Descending';
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing16,
-              vertical: AppTheme.spacing8,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isLatestFirst
-                      ? Icons.arrow_downward_rounded
-                      : Icons.arrow_upward_rounded,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: AppTheme.spacing4),
-                Text(
-                  isLatestFirst ? 'Latest first' : 'Oldest first',
-                  style: theme.textTheme.bodySmall?.copyWith(
+        return SizedBox(
+          height: AppTheme.minTouchTarget,
+          child: InkWell(
+            onTap: () {
+              viewModel.sortOrder = isLatestFirst ? 'Ascending' : 'Descending';
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing16,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isLatestFirst
+                        ? Icons.arrow_downward_rounded
+                        : Icons.arrow_upward_rounded,
+                    size: 16,
                     color: AppColors.textSecondary,
                   ),
-                ),
-              ],
+                  const SizedBox(width: AppTheme.spacing4),
+                  Text(
+                    isLatestFirst ? 'Latest first' : 'Oldest first',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

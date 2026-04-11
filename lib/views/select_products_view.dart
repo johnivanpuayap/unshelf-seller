@@ -178,9 +178,13 @@ class _SelectProductsViewState extends State<SelectProductsView> {
           });
         },
         backgroundColor: AppColors.primaryColor,
-        label: const Text(
-          'Next',
-          style: TextStyle(color: Colors.white, fontSize: 16.0),
+        label: Builder(
+          builder: (context) => Text(
+            'Next',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.white,
+                ),
+          ),
         ),
       ),
     );

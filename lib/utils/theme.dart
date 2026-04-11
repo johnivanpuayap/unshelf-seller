@@ -180,20 +180,6 @@ class AppTheme {
         ),
       ),
 
-      // ─── Bottom navigation ───
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primaryColor,
-        unselectedItemColor: const Color(0xFF9E9E9E),
-        selectedLabelStyle: GoogleFonts.jost(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: GoogleFonts.jost(fontSize: 12),
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-      ),
-
       // ─── Floating action button ───
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primaryColor,

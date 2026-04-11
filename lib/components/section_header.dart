@@ -34,14 +34,6 @@ class SectionHeader extends StatelessWidget {
           if (actionLabel != null && onAction != null)
             TextButton(
               onPressed: onAction,
-              style: TextButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing8,
-                  vertical: AppTheme.spacing4,
-                ),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
               child: Text(actionLabel!),
             ),
         ],

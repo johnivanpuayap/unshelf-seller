@@ -92,7 +92,7 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                                     .bodySmall
                                     ?.copyWith(
                                         color: isSelected
-                                            ? Colors.white70
+                                            ? Colors.white
                                             : AppColors.textSecondary),
                               ),
                               leading: CircleAvatar(
@@ -151,9 +151,9 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                             ? AppColors.primaryColor
                             : AppColors.textSecondary,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Next',
-                        style: TextStyle(fontSize: 18),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
                   ),

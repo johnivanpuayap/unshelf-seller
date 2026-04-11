@@ -151,9 +151,9 @@ class _RestockDetailsViewState extends State<RestockDetailsView> {
                 ),
                 backgroundColor: AppColors.primaryColor,
               ),
-              child: const Text(
+              child: Text(
                 'Submit Restock',
-                style: TextStyle(fontSize: 18),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
             if (viewModel.error.isNotEmpty)

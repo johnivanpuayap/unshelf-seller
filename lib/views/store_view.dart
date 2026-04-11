@@ -174,23 +174,21 @@ class _StoreViewState extends State<StoreView> {
             ],
           ),
           const SizedBox(height: AppTheme.spacing12),
-          SizedBox(
-            height: 36,
-            child: OutlinedButton.icon(
-              onPressed: () => _navigateTo(
-                EditStoreProfileView(storeDetails: viewModel.storeDetails!),
-              ),
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: Text(
-                'Edit Profile',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing16,
-                ),
+          OutlinedButton.icon(
+            onPressed: () => _navigateTo(
+              EditStoreProfileView(storeDetails: viewModel.storeDetails!),
+            ),
+            icon: const Icon(Icons.edit_outlined, size: 16),
+            label: Text(
+              'Edit Profile',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, AppTheme.minTouchTarget),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing16,
               ),
             ),
           ),
