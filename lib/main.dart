@@ -20,6 +20,7 @@ import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
+import 'package:unshelf_seller/authentication/views/reset_password_view.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
@@ -159,8 +160,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Unshelf',
       theme: AppTheme.lightTheme,
-      home:
-          FirebaseAuth.instance.currentUser != null ? const HomeView() : const LoginView(),
+      home: _getInitialScreen(),
     );
+  }
+
+  /// Checks URL parameters for password-reset deep links on web,
+  /// otherwise falls back to normal auth routing.
+  Widget _getInitialScreen() {
+    if (kIsWeb) {
+      final uri = Uri.base;
+      final mode = uri.queryParameters['mode'];
+      final oobCode = uri.queryParameters['oobCode'];
+      if (mode == 'resetPassword' && oobCode != null) {
+        return ResetPasswordView(oobCode: oobCode);
+      }
+    }
+    return FirebaseAuth.instance.currentUser != null
+        ? const HomeView()
+        : const LoginView();
   }
 }
