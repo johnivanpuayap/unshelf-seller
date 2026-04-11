@@ -37,6 +37,7 @@ class _EditProductViewState extends State<EditProductView> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ProductViewModel>(builder: (context, viewModel, child) {
+      final theme = Theme.of(context);
       return Scaffold(
         appBar: CustomAppBar(
             title: 'Edit Product Details',
@@ -243,8 +244,7 @@ class _EditProductViewState extends State<EditProductView> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: AppTheme.spacing8,
                             horizontal: AppTheme.spacing8),
-                        labelStyle:
-                            TextStyle(color: AppColors.textPrimary),
+                        labelStyle: theme.textTheme.bodyMedium,
                         errorStyle: Theme.of(context)
                             .textTheme
                             .bodySmall
@@ -277,8 +277,7 @@ class _EditProductViewState extends State<EditProductView> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: AppTheme.spacing12,
                             horizontal: AppTheme.spacing12),
-                        labelStyle:
-                            TextStyle(color: AppColors.textPrimary),
+                        labelStyle: theme.textTheme.bodyMedium,
                       ),
                       maxLines: 3,
                       validator: (value) {
@@ -316,8 +315,7 @@ class _EditProductViewState extends State<EditProductView> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: AppTheme.spacing12,
                             horizontal: AppTheme.spacing12),
-                        labelStyle:
-                            TextStyle(color: AppColors.textPrimary),
+                        labelStyle: theme.textTheme.bodyMedium,
                       ),
                       onChanged: (String? newValue) {
                         viewModel.selectedCategory = newValue!;

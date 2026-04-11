@@ -192,9 +192,9 @@ class _ListingsViewState extends State<ListingsView> {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text(
+              child: Text(
                 'Delete',
-                style: TextStyle(color: AppColors.error),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error),
               ),
             ),
           ],

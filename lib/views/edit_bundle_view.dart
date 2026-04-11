@@ -44,6 +44,7 @@ class _EditBundleViewState extends State<EditBundleView> {
           }),
       body: Consumer<BundleViewModel>(
         builder: (context, viewModel, child) {
+          final theme = Theme.of(context);
           return viewModel.isLoading
               ? const Center(
                   child: CircularProgressIndicator(),
@@ -110,8 +111,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: AppTheme.spacing8,
                                   horizontal: AppTheme.spacing8),
-                              labelStyle:
-                                  TextStyle(color: AppColors.textPrimary),
+                              labelStyle: theme.textTheme.bodyMedium,
                               errorStyle: Theme.of(context)
                                   .textTheme
                                   .labelSmall
@@ -147,8 +147,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: AppTheme.spacing8,
                                   horizontal: AppTheme.spacing8),
-                              labelStyle:
-                                  TextStyle(color: AppColors.textPrimary),
+                              labelStyle: theme.textTheme.bodyMedium,
                               errorStyle: Theme.of(context)
                                   .textTheme
                                   .labelSmall
@@ -193,8 +192,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: AppTheme.spacing12,
                                   horizontal: AppTheme.spacing12),
-                              labelStyle:
-                                  TextStyle(color: AppColors.textPrimary),
+                              labelStyle: theme.textTheme.bodyMedium,
                             ),
                             onChanged: (String? newValue) {
                               viewModel.selectedCategory = newValue!;
@@ -232,8 +230,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: AppTheme.spacing12,
                                   horizontal: AppTheme.spacing12),
-                              labelStyle:
-                                  TextStyle(color: AppColors.textPrimary),
+                              labelStyle: theme.textTheme.bodyMedium,
                             ),
                             keyboardType: const TextInputType.numberWithOptions(
                                 decimal: true),
@@ -276,8 +273,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: AppTheme.spacing12,
                                   horizontal: AppTheme.spacing12),
-                              labelStyle:
-                                  TextStyle(color: AppColors.textPrimary),
+                              labelStyle: theme.textTheme.bodyMedium,
                             ),
                             keyboardType: TextInputType.number,
                             inputFormatters: [
@@ -318,8 +314,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               contentPadding: const EdgeInsets.symmetric(
                                   vertical: AppTheme.spacing12,
                                   horizontal: AppTheme.spacing12),
-                              labelStyle:
-                                  TextStyle(color: AppColors.textPrimary),
+                              labelStyle: theme.textTheme.bodyMedium,
                             ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),

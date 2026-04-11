@@ -643,9 +643,9 @@ class _ActionBar extends StatelessWidget {
               Navigator.of(dialogContext).pop();
               _handleCancel(context, viewModel);
             },
-            child: const Text(
+            child: Text(
               'Yes, Cancel',
-              style: TextStyle(color: AppColors.error),
+              style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(color: AppColors.error),
             ),
           ),
         ],

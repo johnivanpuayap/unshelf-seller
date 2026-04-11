@@ -18,14 +18,15 @@ class ForgotPasswordView extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Consumer<ForgotPasswordViewModel>(
             builder: (context, viewModel, child) {
+              final theme = Theme.of(context);
               return Form(
                 key: viewModel.formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Enter your email to receive a password reset link.',
-                      style: TextStyle(fontSize: 16),
+                      style: theme.textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(

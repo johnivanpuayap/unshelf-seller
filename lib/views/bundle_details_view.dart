@@ -173,11 +173,9 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
                         .bodyLarge
                         ?.copyWith(color: AppColors.textPrimary),
                     children: [
-                      const TextSpan(
+                      TextSpan(
                         text: '\u20B1 ',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       TextSpan(
                         text: value,
