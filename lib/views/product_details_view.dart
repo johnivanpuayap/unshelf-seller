@@ -107,10 +107,12 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 viewModel.fetchProductData(widget.productId);
               }
             },
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add Batch',
-                style: TextStyle(color: Colors.white)),
-            backgroundColor: AppColors.primaryColor,
+            icon: Icon(Icons.add,
+                color: Theme.of(context).colorScheme.onPrimary),
+            label: Text('Add Batch',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary)),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           );
         },
       ),
