@@ -1,30 +1,97 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 
-import 'package:unshelf_seller/main.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  group('AppColors', () {
+    test('primary color is vibrant green', () {
+      expect(AppColors.primaryColor.value, 0xFF22C55E);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    test('all status colors are defined', () {
+      expect(AppColors.statusPending, isNotNull);
+      expect(AppColors.statusPendingText, isNotNull);
+      expect(AppColors.statusProcessing, isNotNull);
+      expect(AppColors.statusProcessingText, isNotNull);
+      expect(AppColors.statusReady, isNotNull);
+      expect(AppColors.statusReadyText, isNotNull);
+      expect(AppColors.statusCompleted, isNotNull);
+      expect(AppColors.statusCompletedText, isNotNull);
+      expect(AppColors.statusCancelled, isNotNull);
+      expect(AppColors.statusCancelledText, isNotNull);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('semantic colors are defined', () {
+      expect(AppColors.success, isNotNull);
+      expect(AppColors.warning, isNotNull);
+      expect(AppColors.error, isNotNull);
+      expect(AppColors.info, isNotNull);
+    });
+  });
+
+  group('AppTheme', () {
+    test('spacing scale follows 8dp grid', () {
+      expect(AppTheme.spacing4, 4);
+      expect(AppTheme.spacing8, 8);
+      expect(AppTheme.spacing12, 12);
+      expect(AppTheme.spacing16, 16);
+      expect(AppTheme.spacing24, 24);
+      expect(AppTheme.spacing32, 32);
+      expect(AppTheme.spacing48, 48);
+    });
+
+    test('minimum touch target is 48dp', () {
+      expect(AppTheme.minTouchTarget, 48);
+    });
+
+    test('border radius scale is defined', () {
+      expect(AppTheme.radiusSmall, 8);
+      expect(AppTheme.radiusMedium, 12);
+      expect(AppTheme.radiusLarge, 16);
+      expect(AppTheme.radiusFull, 100);
+    });
+
+    testWidgets('light theme creates valid ThemeData', (tester) async {
+      late ThemeData theme;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: Builder(
+            builder: (context) {
+              theme = Theme.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(theme.useMaterial3, isTrue);
+      expect(theme.colorScheme.primary, AppColors.primaryColor);
+      expect(theme.colorScheme.error, AppColors.error);
+      expect(theme.textTheme.displayLarge, isNotNull);
+      expect(theme.textTheme.headlineMedium, isNotNull);
+      expect(theme.textTheme.bodyMedium, isNotNull);
+      expect(theme.textTheme.labelSmall, isNotNull);
+    });
+
+    testWidgets('light theme renders scaffold correctly', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const Scaffold(
+            body: Center(child: Text('Unshelf Seller')),
+          ),
+        ),
+      );
+
+      expect(find.text('Unshelf Seller'), findsOneWidget);
+    });
   });
 }
