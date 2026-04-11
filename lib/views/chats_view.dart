@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:unshelf_seller/components/chat_bubble.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
-import 'package:unshelf_seller/components/my_textfield.dart';
 import 'package:unshelf_seller/core/interfaces/i_chat_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/colors.dart';
@@ -117,10 +116,11 @@ class _ChatViewState extends State<ChatView>
       child: Row(
         children: [
           Expanded(
-            child: MyTextField(
+            child: TextField(
               controller: _messageController,
-              hintText: 'Enter message',
-              obscureText: false,
+              decoration: const InputDecoration(
+                hintText: 'Enter message',
+              ),
             ),
           ),
           IconButton(
