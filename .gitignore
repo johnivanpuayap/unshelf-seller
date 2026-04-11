@@ -48,3 +48,7 @@ TODO.md
 
 # Design docs (generated specs/plans)
 /docs/
+
+# AI agent config
+.agents/
+.claude/
