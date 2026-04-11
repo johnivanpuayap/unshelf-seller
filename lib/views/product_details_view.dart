@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/components/section_header.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
 import 'package:unshelf_seller/views/add_batch_view.dart';
@@ -82,7 +83,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                     context, 'Category', viewModel.product!.category),
                 const SizedBox(height: AppTheme.spacing4),
                 // Batches Section
-                _buildSectionHeader(context, 'Batches'),
+                const SectionHeader(title: 'Batches'),
                 _buildBatchesSection(context, viewModel),
               ],
             ),
@@ -145,20 +146,6 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
-      child: Text(
-        title,
-        style: Theme.of(context)
-            .textTheme
-            .headlineSmall
-            ?.copyWith(color: AppColors.primaryColor),
       ),
     );
   }
