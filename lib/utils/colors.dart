@@ -37,8 +37,8 @@ class AppColors {
   static const Color statusCompletedText = Color(0xFF00695C);
   static const Color statusCancelled = Color(0xFFFFEBEE);
   static const Color statusCancelledText = Color(0xFFC62828);
-  static const Color statusPaid = Color(0xFFE8F5E9);
-  static const Color statusPaidText = Color(0xFF2E7D32);
-  static const Color statusUnpaid = Color(0xFFFFEBEE);
-  static const Color statusUnpaidText = Color(0xFFC62828);
+  static const Color statusPaid = Color(0xFFE0F2F1);
+  static const Color statusPaidText = Color(0xFF00695C);
+  static const Color statusUnpaid = Color(0xFFFFF3E0);
+  static const Color statusUnpaidText = Color(0xFFE65100);
 }

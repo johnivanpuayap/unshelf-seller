@@ -8,6 +8,7 @@ class StatusConstants {
   static const String sale = 'Sale';
   static const String withdraw = 'Withdraw';
 
+  // Payment status
   static const String paid = 'Paid';
   static const String unpaid = 'Unpaid';
 }
