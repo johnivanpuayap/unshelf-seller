@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 
 /// Centralized theme for Unshelf Seller app.
-/// Uses Material 3 with a teal/emerald primary palette.
+/// Uses Material 3 with a vibrant green primary palette.
 class AppTheme {
   AppTheme._();
 

@@ -8,9 +8,9 @@ class AppColors {
   AppColors._();
 
   // ─── Brand palette ───
-  static const Color primaryColor = Color(0xFF0AB68D);
-  static const Color darkColor = Color(0xFF028174);
-  static const Color lightColor = Color(0xFFE0F5EE);
+  static const Color primaryColor = Color(0xFF22C55E);
+  static const Color darkColor = Color(0xFF16A34A);
+  static const Color lightColor = Color(0xFFDCFCE7);
 
   // ─── Semantic colors ───
   static const Color success = Color(0xFF2E7D32);
