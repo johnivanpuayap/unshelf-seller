@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/status_badge.dart';
+import 'package:unshelf_seller/core/constants/status_constants.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/views/order_history_details_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
@@ -215,24 +216,10 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                   ),
                                 ),
                                 const SizedBox(height: AppTheme.spacing8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: AppTheme.spacing4,
-                                    horizontal: AppTheme.spacing12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: order.isPaid
-                                        ? AppColors.primaryColor
-                                        : AppColors.error,
-                                    borderRadius: BorderRadius.circular(
-                                        AppTheme.radiusFull),
-                                  ),
-                                  child: Text(
-                                    order.isPaid ? 'Paid' : 'Unpaid',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                StatusBadge(
+                                  status: order.isPaid
+                                      ? StatusConstants.paid
+                                      : StatusConstants.unpaid,
                                 ),
                               ],
                             ),

@@ -58,6 +58,16 @@ class StatusBadge extends StatelessWidget {
           background: AppColors.statusCancelled,
           foreground: AppColors.statusCancelledText,
         );
+      case StatusConstants.paid:
+        return const _StatusColors(
+          background: AppColors.statusPaid,
+          foreground: AppColors.statusPaidText,
+        );
+      case StatusConstants.unpaid:
+        return const _StatusColors(
+          background: AppColors.statusUnpaid,
+          foreground: AppColors.statusUnpaidText,
+        );
       case StatusConstants.pending:
       default:
         return const _StatusColors(
