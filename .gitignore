@@ -46,8 +46,10 @@ app.*.map.json
 # Miscellaneous
 TODO.md
 
-# Design docs (generated specs/plans)
-/docs/
+# Design docs (generated specs/plans) — ignore everything under /docs/
+# EXCEPT /docs/crucible/ which holds the Unshelf rebrand sub-project artifacts.
+/docs/*
+!/docs/crucible/
 
 # AI agent config
 .agents/
