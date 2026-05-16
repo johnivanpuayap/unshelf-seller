@@ -1,3 +1,4 @@
+// Intentionally interface-less: thin platform wrapper.
 import 'package:permission_handler/permission_handler.dart';
 
 Future<void> requestLocationPermission() async {
