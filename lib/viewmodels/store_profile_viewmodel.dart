@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -8,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:unshelf_seller/core/current_user_provider.dart';
 import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
+import 'package:unshelf_seller/data/repositories/providers.dart';
 import 'package:unshelf_seller/models/store_model.dart';
 
 part 'store_profile_viewmodel.g.dart';
@@ -124,11 +124,12 @@ class StoreProfileViewModel extends _$StoreProfileViewModel {
   }
 
   Future<String> uploadImage(Uint8List? image) async {
+    // Route uploads through StorageRepository so the viewmodel stays free of
+    // FirebaseStorage SDK references. The repo handles the put + download
+    // URL fetch in one call.
     final userId = _currentUser.uid;
-    final mainImageRef =
-        FirebaseStorage.instance.ref().child('user_avatars/$userId.jpg');
-    await mainImageRef.putData(image!);
-    final mainImageUrl = await mainImageRef.getDownloadURL();
-    return mainImageUrl;
+    return ref
+        .read(storageRepositoryProvider)
+        .uploadBytes('user_avatars/$userId.jpg', image!);
   }
 }
