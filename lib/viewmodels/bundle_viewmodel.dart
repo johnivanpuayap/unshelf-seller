@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:unshelf_seller/core/logger.dart';
 import 'package:unshelf_seller/core/providers/services.dart';
+import 'package:unshelf_seller/data/repositories/providers.dart';
 import 'package:unshelf_seller/models/bundle_model.dart';
 
 part 'bundle_viewmodel.g.dart';
@@ -130,12 +130,12 @@ class BundleViewModel extends _$BundleViewModel {
       final bundleDiscount = int.tryParse(bundleDiscountController.text) ?? 0;
       final bundleDescription = bundleDescriptionController.text;
 
-      final mainImageRef = FirebaseStorage.instance.ref().child(
-          'bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await mainImageRef.putData(state.mainImageData!);
-
-      final mainImageUrl = await mainImageRef.getDownloadURL();
+      // Route through StorageRepository so the viewmodel stays free of
+      // FirebaseStorage SDK references.
+      final mainImageUrl = await ref.read(storageRepositoryProvider).uploadBytes(
+            'bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg',
+            state.mainImageData!,
+          );
 
       BundleModel bundle = BundleModel(
         id: '',
@@ -249,12 +249,10 @@ class BundleViewModel extends _$BundleViewModel {
       final bundleDiscount = int.tryParse(bundleDiscountController.text) ?? 0;
       final bundleDescription = bundleDescriptionController.text;
 
-      final mainImageRef = FirebaseStorage.instance.ref().child(
-          'bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await mainImageRef.putData(state.mainImageData!);
-
-      final mainImageUrl = await mainImageRef.getDownloadURL();
+      final mainImageUrl = await ref.read(storageRepositoryProvider).uploadBytes(
+            'bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg',
+            state.mainImageData!,
+          );
 
       BundleModel updatedBundle = BundleModel(
         id: state.bundle!.id,

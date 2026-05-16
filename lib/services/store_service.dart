@@ -1,42 +1,46 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
+import 'package:get_it/get_it.dart';
 
-import 'package:unshelf_seller/core/constants/firestore_constants.dart';
 import 'package:unshelf_seller/core/current_user_provider.dart';
 import 'package:unshelf_seller/core/errors/app_exceptions.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/data/repositories/stores_repository.dart';
+import 'package:unshelf_seller/data/repositories/user_repository.dart';
 import 'package:unshelf_seller/models/store_model.dart';
 import 'package:unshelf_seller/models/user_model.dart';
 
+// A "store" is split across two Firestore documents:
+//   * users/{uid}    — name, email, phoneNumber  (handled by UserRepository)
+//   * stores/{uid}   — storeName, location, schedule (handled by StoresRepository)
+// StoreService coordinates the two repositories so callers see a single
+// StoreModel surface.
 class StoreService implements IStoreService {
-  final FirebaseFirestore _firestore;
+  final StoresRepository _storesRepo;
+  final UserRepository _userRepo;
   final CurrentUserProvider _currentUser;
 
   StoreService({
-    FirebaseFirestore? firestore,
+    StoresRepository? storesRepo,
+    UserRepository? userRepo,
     CurrentUserProvider? currentUser,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+  })  : _storesRepo = storesRepo ?? GetIt.instance<StoresRepository>(),
+        _userRepo = userRepo ?? GetIt.instance<UserRepository>(),
         _currentUser = currentUser ?? CurrentUserProvider();
 
   @override
   Future<UserProfileModel?> fetchUserProfile() async {
     try {
       final uid = _currentUser.uid;
-
-      final userDoc = await _firestore
-          .collection(FirestoreConstants.users)
-          .doc(uid)
-          .get();
-
-      if (!userDoc.exists) {
+      final user = await _userRepo.getUser(uid);
+      if (user == null) {
         AppLogger.warning('User profile not found for uid: $uid');
-        return null;
       }
-
-      return UserProfileModel.fromSnapshot(userDoc);
+      return user;
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch user profile', e, stackTrace);
-      throw FirestoreException('Failed to fetch user profile', originalError: e);
+      throw FirestoreException('Failed to fetch user profile',
+          originalError: e);
     }
   }
 
@@ -44,27 +48,19 @@ class StoreService implements IStoreService {
   Future<StoreModel?> fetchStoreDetails() async {
     try {
       final uid = _currentUser.uid;
-
-      final userDoc = await _firestore
-          .collection(FirestoreConstants.users)
-          .doc(uid)
-          .get();
-
-      final storeDoc = await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(uid)
-          .get();
-
-      if (!userDoc.exists || !storeDoc.exists) {
+      // StoresRepository.getStore joins users/{uid} + stores/{uid}; mirrors
+      // the original service-level join.
+      final store = await _storesRepo.getStore(uid);
+      if (store == null) {
         AppLogger.warning('User profile or store not found for uid: $uid');
-        return null;
+      } else {
+        AppLogger.debug('Store details fetched for uid: $uid');
       }
-
-      AppLogger.debug('Store details fetched for uid: $uid');
-      return StoreModel.fromSnapshot(userDoc, storeDoc);
+      return store;
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch store details', e, stackTrace);
-      throw FirestoreException('Failed to fetch store details', originalError: e);
+      throw FirestoreException('Failed to fetch store details',
+          originalError: e);
     }
   }
 
@@ -72,15 +68,12 @@ class StoreService implements IStoreService {
   Future<int> fetchStoreFollowers() async {
     try {
       final uid = _currentUser.uid;
-
-      final followersSnapshot = await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(uid)
-          .collection('followers')
-          .get();
-
-      AppLogger.debug('Store followers fetched: ${followersSnapshot.size}');
-      return followersSnapshot.size;
+      // UserRepository.fetchFollowersCount already reads from
+      // `stores/{uid}/followers` — the subcollection lives under stores, not
+      // users (see the repo doc comment for the rationale).
+      final count = await _userRepo.fetchFollowersCount(uid);
+      AppLogger.debug('Store followers fetched: $count');
+      return count;
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch store followers', e, stackTrace);
       throw FirestoreException('Failed to fetch store followers',
@@ -92,24 +85,13 @@ class StoreService implements IStoreService {
   Future<double> fetchStoreRatings() async {
     try {
       final uid = _currentUser.uid;
-
-      final ratingsSnapshot = await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(uid)
-          .collection('ratings')
-          .doc('average')
-          .get();
-
-      final rawData = ratingsSnapshot.data();
-      final Map<String, dynamic>? data =
-          rawData != null ? Map<String, dynamic>.from(rawData as Map) : null;
-      final average = (data?['average'] ?? 0.0).toDouble();
-
+      final average = await _storesRepo.fetchAverageRating(uid);
       AppLogger.debug('Store rating fetched: $average');
       return average;
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch store ratings', e, stackTrace);
-      throw FirestoreException('Failed to fetch store ratings', originalError: e);
+      throw FirestoreException('Failed to fetch store ratings',
+          originalError: e);
     }
   }
 
@@ -117,16 +99,12 @@ class StoreService implements IStoreService {
   Future<void> updateStoreProfile(Map<String, dynamic> fields) async {
     try {
       final uid = _currentUser.uid;
-
-      await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(uid)
-          .update(fields);
-
+      await _storesRepo.updateStoreFields(uid, fields);
       AppLogger.debug('Store profile updated for uid: $uid');
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to update store profile', e, stackTrace);
-      throw FirestoreException('Failed to update store profile', originalError: e);
+      throw FirestoreException('Failed to update store profile',
+          originalError: e);
     }
   }
 
@@ -134,19 +112,12 @@ class StoreService implements IStoreService {
   Future<void> saveStoreLocation(double latitude, double longitude) async {
     try {
       final uid = _currentUser.uid;
-
-      await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(uid)
-          .set({
-        'latitude': latitude,
-        'longitude': longitude,
-      }, SetOptions(merge: true));
-
+      await _storesRepo.updateStoreLocation(uid, latitude, longitude);
       AppLogger.debug('Store location saved for uid: $uid');
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to save store location', e, stackTrace);
-      throw FirestoreException('Failed to save store location', originalError: e);
+      throw FirestoreException('Failed to save store location',
+          originalError: e);
     }
   }
 
@@ -154,28 +125,21 @@ class StoreService implements IStoreService {
   Future<void> saveStoreSchedule(
       String userId, Map<String, Map<String, dynamic>> schedule) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(userId)
-          .update({
+      await _storesRepo.updateStoreFields(userId, {
         'storeSchedule': schedule,
       });
-
       AppLogger.debug('Store schedule saved for uid: $userId');
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to save store schedule', e, stackTrace);
-      throw FirestoreException('Failed to save store schedule', originalError: e);
+      throw FirestoreException('Failed to save store schedule',
+          originalError: e);
     }
   }
 
   @override
   Future<void> createStore(String uid, Map<String, dynamic> data) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.stores)
-          .doc(uid)
-          .set(data);
-
+      await _storesRepo.createStoreDocument(uid, data);
       AppLogger.debug('Store document created for uid: $uid');
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to create store document', e, stackTrace);

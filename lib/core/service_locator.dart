@@ -12,6 +12,18 @@ import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_wallet_service.dart';
+import 'package:unshelf_seller/data/repositories/auth_repository.dart';
+import 'package:unshelf_seller/data/repositories/firebase/firebase_auth_repository.dart';
+import 'package:unshelf_seller/data/repositories/firebase/firebase_orders_repository.dart';
+import 'package:unshelf_seller/data/repositories/firebase/firebase_products_repository.dart';
+import 'package:unshelf_seller/data/repositories/firebase/firebase_storage_repository.dart';
+import 'package:unshelf_seller/data/repositories/firebase/firebase_stores_repository.dart';
+import 'package:unshelf_seller/data/repositories/firebase/firebase_user_repository.dart';
+import 'package:unshelf_seller/data/repositories/orders_repository.dart';
+import 'package:unshelf_seller/data/repositories/products_repository.dart';
+import 'package:unshelf_seller/data/repositories/storage_repository.dart';
+import 'package:unshelf_seller/data/repositories/stores_repository.dart';
+import 'package:unshelf_seller/data/repositories/user_repository.dart';
 import 'package:unshelf_seller/services/analytics_service.dart';
 import 'package:unshelf_seller/services/authentication_service.dart';
 import 'package:unshelf_seller/services/batch_service.dart';
@@ -99,4 +111,12 @@ void setupLocator() {
       currentUser: locator<CurrentUserProvider>(),
     ),
   );
+
+  // Repositories (data layer)
+  locator.registerLazySingleton<AuthRepository>(() => FirebaseAuthRepository());
+  locator.registerLazySingleton<StoresRepository>(() => FirebaseStoresRepository());
+  locator.registerLazySingleton<OrdersRepository>(() => FirebaseOrdersRepository());
+  locator.registerLazySingleton<ProductsRepository>(() => FirebaseProductsRepository());
+  locator.registerLazySingleton<UserRepository>(() => FirebaseUserRepository());
+  locator.registerLazySingleton<StorageRepository>(() => FirebaseStorageRepository());
 }
