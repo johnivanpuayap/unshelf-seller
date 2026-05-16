@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/viewmodels/batch_viewmodel.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
@@ -7,21 +7,22 @@ import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 
-class AddBatchView extends StatelessWidget {
+class AddBatchView extends ConsumerWidget {
   final ProductModel product;
   final _formKey = GlobalKey<FormState>();
 
-  AddBatchView({required this.product});
+  AddBatchView({super.key, required this.product});
 
   @override
-  Widget build(BuildContext context) {
-    final viewModel = Provider.of<BatchViewModel>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(batchViewModelProvider);
+    final notifier = ref.read(batchViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Enter Batch Details',
         onBackPressed: () {
-          viewModel.clearData();
+          notifier.clearData();
           Navigator.pop(context);
         },
       ),
@@ -39,7 +40,7 @@ class AddBatchView extends StatelessWidget {
                     decoration: const InputDecoration(
                       labelText: 'Batch Number (Optional)',
                     ),
-                    controller: viewModel.batchNumberController,
+                    controller: notifier.batchNumberController,
                   ),
                   const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
@@ -47,8 +48,8 @@ class AddBatchView extends StatelessWidget {
                       labelText: 'Expiration Date',
                     ),
                     controller: TextEditingController(
-                      text: viewModel.expiryDate != null
-                          ? "${viewModel.expiryDate!.month}-${viewModel.expiryDate!.day}-${viewModel.expiryDate!.year}"
+                      text: state.expiryDate != null
+                          ? "${state.expiryDate!.month}-${state.expiryDate!.day}-${state.expiryDate!.year}"
                           : '',
                     ),
                     readOnly: true,
@@ -60,7 +61,7 @@ class AddBatchView extends StatelessWidget {
                         lastDate: DateTime(2100),
                       );
                       if (date != null) {
-                        viewModel.expiryDate = date;
+                        notifier.expiryDate = date;
                       }
                     },
                     validator: (value) {
@@ -76,7 +77,7 @@ class AddBatchView extends StatelessWidget {
                       labelText: 'Price',
                     ),
                     keyboardType: TextInputType.number,
-                    controller: viewModel.priceController,
+                    controller: notifier.priceController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter price of the batch';
@@ -94,7 +95,7 @@ class AddBatchView extends StatelessWidget {
                       labelText: 'Stock',
                     ),
                     keyboardType: TextInputType.number,
-                    controller: viewModel.stockController,
+                    controller: notifier.stockController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter stock quantity';
@@ -112,7 +113,7 @@ class AddBatchView extends StatelessWidget {
                       labelText: 'Quantifier',
                       hintText: 'e.g. kilogram, can, pack',
                     ),
-                    controller: viewModel.quantifierController,
+                    controller: notifier.quantifierController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Quantifier is required';
@@ -127,7 +128,7 @@ class AddBatchView extends StatelessWidget {
                       hintText: 'e.g. 10 for 10%, 0 for no discount',
                     ),
                     keyboardType: TextInputType.number,
-                    controller: viewModel.discountController,
+                    controller: notifier.discountController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Discount is required';
@@ -147,17 +148,19 @@ class AddBatchView extends StatelessWidget {
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
                           bool isSuccessful =
-                              await viewModel.addBatch(product.id);
+                              await notifier.addBatch(product.id);
 
                           if (isSuccessful) {
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Text(
                                       'Product batch added successfully!')),
                             );
-                            viewModel.clearData();
+                            notifier.clearData();
                             Navigator.pop(context, true);
                           } else {
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Text(
