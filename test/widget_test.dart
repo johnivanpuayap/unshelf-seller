@@ -98,5 +98,53 @@ void main() {
 
       expect(find.text('Unshelf Seller'), findsOneWidget);
     });
+
+    testWidgets('bodyLarge renders with DM Sans font family', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: UnshelfTheme.light(),
+          home: Builder(
+            builder: (ctx) => Scaffold(
+              body: Text(
+                'probe-sans',
+                style: Theme.of(ctx).textTheme.bodyLarge,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final textWidget = tester.widget<Text>(find.text('probe-sans'));
+      final fontFamily = textWidget.style?.fontFamily;
+      expect(fontFamily, isNotNull);
+      // GoogleFonts emits a runtime sentinel family without spaces (e.g.
+      // 'DMSans_regular'). Asserting `contains('DMSans')` is the regression
+      // net that proves the GoogleFonts loader is wired in — a raw
+      // `fontFamily: 'DM Sans'` would not match.
+      expect(fontFamily, contains('DMSans'));
+    });
+
+    testWidgets('headlineMedium renders with DM Serif Display font family',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: UnshelfTheme.light(),
+          home: Builder(
+            builder: (ctx) => Scaffold(
+              body: Text(
+                'probe-serif',
+                style: Theme.of(ctx).textTheme.headlineMedium,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final textWidget = tester.widget<Text>(find.text('probe-serif'));
+      final fontFamily = textWidget.style?.fontFamily;
+      expect(fontFamily, isNotNull);
+      // See bodyLarge test above — GoogleFonts emits 'DMSerifDisplay_<variant>'.
+      expect(fontFamily, contains('DMSerifDisplay'));
+    });
   });
 }
