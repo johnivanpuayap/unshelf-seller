@@ -228,7 +228,7 @@ class _LoginViewState extends State<LoginView> {
                         onPressed: _submitting
                             ? null
                             : () => Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) => ForgotPasswordView(),
+                                  builder: (_) => const ForgotPasswordView(),
                                 )),
                         child: Text(
                           'Forgot password?',
