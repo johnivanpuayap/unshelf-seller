@@ -1,55 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/batch_model.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 
-class ProductSummaryViewModel extends BaseViewModel {
-  final IProductService _productService;
-  final IBatchService _batchService;
+part 'product_summary_viewmodel.g.dart';
 
-  ProductSummaryViewModel({
-    required IProductService productService,
-    required IBatchService batchService,
-  })  : _productService = productService,
-        _batchService = batchService;
+/// Immutable state for the product details (summary + batches) screen.
+///
+/// `PageController` remains owned by the notifier (imperative widget glue);
+/// see [ProductSummaryViewModel].
+class ProductSummaryState {
+  final bool isLoading;
+  final String? errorMessage;
+  final ProductModel? product;
+  final List<BatchModel>? batches;
+  final int currentPage;
 
-  ProductModel? _product;
-  ProductModel? get product => _product;
-  List<BatchModel>? _batches;
-  List<BatchModel>? get batches => _batches;
+  const ProductSummaryState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.product,
+    required this.batches,
+    required this.currentPage,
+  });
 
-  final PageController _pageController = PageController();
-  PageController get pageController => _pageController;
-  int _currentPage = 0;
-  int get currentPage => _currentPage;
+  factory ProductSummaryState.initial() => const ProductSummaryState(
+        isLoading: false,
+        errorMessage: null,
+        product: null,
+        batches: null,
+        currentPage: 0,
+      );
+
+  ProductSummaryState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    Object? product = _sentinel,
+    Object? batches = _sentinel,
+    int? currentPage,
+  }) {
+    return ProductSummaryState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      product: identical(product, _sentinel)
+          ? this.product
+          : product as ProductModel?,
+      batches: identical(batches, _sentinel)
+          ? this.batches
+          : batches as List<BatchModel>?,
+      currentPage: currentPage ?? this.currentPage,
+    );
+  }
+
+  static const _sentinel = Object();
+}
+
+/// Product summary ViewModel — backs the product details screen. Owns a
+/// `PageController` on the notifier instance (imperative widget glue, not
+/// state).
+@riverpod
+class ProductSummaryViewModel extends _$ProductSummaryViewModel {
+  final PageController pageController = PageController();
+
+  @override
+  ProductSummaryState build() {
+    ref.onDispose(() {
+      pageController.dispose();
+    });
+    return ProductSummaryState.initial();
+  }
 
   Future<void> fetchProductData(String productId) async {
-    setLoading(true);
-    notifyListeners();
+    state = state.copyWith(isLoading: true);
 
     try {
-      _product = await _productService.getProduct(productId);
-      _batches = await _productService.getProductBatches(product!);
+      final product =
+          await ref.read(productServiceProvider).getProduct(productId);
+      List<BatchModel>? batches;
+      if (product != null) {
+        batches =
+            await ref.read(productServiceProvider).getProductBatches(product);
+      }
+      state = state.copyWith(
+        product: product,
+        batches: batches,
+        isLoading: false,
+      );
     } catch (e) {
       AppLogger.error('Error fetching product data: $e');
-    } finally {
-      setLoading(false);
-      notifyListeners();
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
   void onPageChanged(int index) {
-    _currentPage = index;
-    notifyListeners();
+    state = state.copyWith(currentPage: index);
   }
 
   Future<void> deleteBatch(String batchNumber) async {
-    await _batchService.deleteBatch(batchNumber);
-    _batches!.removeWhere((batch) => batch.batchNumber == batchNumber);
-    notifyListeners();
+    await ref.read(batchServiceProvider).deleteBatch(batchNumber);
+    final batches = state.batches;
+    if (batches != null) {
+      final updated = batches
+          .where((batch) => batch.batchNumber != batchNumber)
+          .toList();
+      state = state.copyWith(batches: updated);
+    }
   }
 }

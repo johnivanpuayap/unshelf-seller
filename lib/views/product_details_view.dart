@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
+import 'package:intl/intl.dart';
+
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/section_header.dart';
 import 'package:unshelf_seller/models/product_model.dart';
-import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
-import 'package:unshelf_seller/views/add_batch_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
-import 'package:intl/intl.dart';
+import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
+import 'package:unshelf_seller/views/add_batch_view.dart';
 import 'package:unshelf_seller/views/edit_batch_view.dart';
 
-class ProductDetailsView extends StatefulWidget {
+class ProductDetailsView extends ConsumerStatefulWidget {
   final String productId;
   final bool? isNew;
 
@@ -18,44 +19,48 @@ class ProductDetailsView extends StatefulWidget {
       {super.key, required this.productId, this.isNew = false});
 
   @override
-  State<ProductDetailsView> createState() => _ProductDetailsViewState();
+  ConsumerState<ProductDetailsView> createState() =>
+      _ProductDetailsViewState();
 }
 
-class _ProductDetailsViewState extends State<ProductDetailsView> {
+class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
   bool _dialogShown = false;
 
   @override
   void initState() {
     super.initState();
-    final viewModel =
-        Provider.of<ProductSummaryViewModel>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      viewModel.fetchProductData(widget.productId);
+      ref
+          .read(productSummaryViewModelProvider.notifier)
+          .fetchProductData(widget.productId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = ref.watch(productSummaryViewModelProvider);
+    final notifier = ref.read(productSummaryViewModelProvider.notifier);
+
+    if (viewModel.product != null &&
+        widget.isNew == true &&
+        !_dialogShown) {
+      _dialogShown = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showAddBatchDialog(viewModel.product!);
+      });
+    }
+
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Product Details',
           onBackPressed: () {
             Navigator.pop(context);
           }),
-      body: Consumer<ProductSummaryViewModel>(
-        builder: (context, viewModel, child) {
+      body: Builder(
+        builder: (context) {
           if (viewModel.isLoading) {
             return const Center(child: CircularProgressIndicator());
-          }
-
-          if (viewModel.product != null &&
-              widget.isNew == true &&
-              !_dialogShown) {
-            _dialogShown = true;
-
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showAddBatchDialog(viewModel.product!);
-            });
           }
 
           if (viewModel.product == null) {
@@ -84,38 +89,36 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                 const SizedBox(height: AppTheme.spacing4),
                 // Batches Section
                 const SectionHeader(title: 'Batches'),
-                _buildBatchesSection(context, viewModel),
+                _buildBatchesSection(context, viewModel, notifier),
               ],
             ),
           );
         },
       ),
-      floatingActionButton: Consumer<ProductSummaryViewModel>(
-        builder: (context, viewModel, child) {
-          return FloatingActionButton.extended(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddBatchView(
-                    product: viewModel.product!,
+      floatingActionButton: viewModel.product == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddBatchView(
+                      product: viewModel.product!,
+                    ),
                   ),
-                ),
-              );
+                );
 
-              if (result == true) {
-                viewModel.fetchProductData(widget.productId);
-              }
-            },
-            icon: Icon(Icons.add,
-                color: Theme.of(context).colorScheme.onPrimary),
-            label: Text('Add Batch',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary)),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          );
-        },
-      ),
+                if (result == true) {
+                  notifier.fetchProductData(widget.productId);
+                }
+              },
+              icon: Icon(Icons.add,
+                  color: Theme.of(context).colorScheme.onPrimary),
+              label: Text('Add Batch',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary)),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
     );
   }
 
@@ -153,7 +156,9 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
   }
 
   Widget _buildBatchesSection(
-      BuildContext context, ProductSummaryViewModel viewModel) {
+      BuildContext context,
+      ProductSummaryState viewModel,
+      ProductSummaryViewModel notifier) {
     final batches = viewModel.batches;
 
     return Column(
@@ -203,7 +208,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                         text: 'Price: ',
                                       ),
                                       const TextSpan(
-                                        text: '\u20B1 ',
+                                        text: '₱ ',
                                         style: TextStyle(
                                           fontFamily: 'Roboto',
                                         ),
@@ -236,7 +241,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                   );
 
                                   if (editResult == true) {
-                                    viewModel
+                                    notifier
                                         .fetchProductData(widget.productId);
                                   }
                                 },
@@ -274,7 +279,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
                                         ),
                                         TextButton(
                                           onPressed: () {
-                                            viewModel
+                                            notifier
                                                 .deleteBatch(batch.batchNumber);
                                             Navigator.of(context).pop();
                                           },
@@ -373,10 +378,9 @@ class _ProductDetailsViewState extends State<ProductDetailsView> {
 
                 if (result == true) {
                   if (mounted) {
-                    final viewModel = Provider.of<ProductSummaryViewModel>(
-                        context,
-                        listen: false);
-                    viewModel.fetchProductData(product.id);
+                    ref
+                        .read(productSummaryViewModelProvider.notifier)
+                        .fetchProductData(product.id);
                   }
                 }
               },
