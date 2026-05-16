@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
-
 /// A card representing a product or bundle listing.
-/// Used in the listings view.
+///
+/// Soft Editorial styling: honey-paper raised surface
+/// (`colorScheme.surfaceContainerHighest`), 14px radius, two-layer shadow,
+/// consistent with the rest of the redesigned admin surfaces.
 class ProductCard extends StatelessWidget {
   final String name;
   final String? imageUrl;
@@ -28,66 +28,74 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-    return Card(
-      elevation: AppTheme.elevationLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .02),
+            offset: const Offset(0, 1),
+            blurRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF1F2A20).withValues(alpha: .06),
+            offset: const Offset(0, 8),
+            blurRadius: 28,
+          ),
+        ],
       ),
-      color: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      margin: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Product image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: _ProductImage(imageUrl: imageUrl),
-              ),
-
-              const SizedBox(width: AppTheme.spacing12),
-
-              // Name, category chip, batch count
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (category != null) ...[
-                      const SizedBox(height: AppTheme.spacing4),
-                      _CategoryChip(label: category!),
-                    ],
-                    if (batchCount != null) ...[
-                      const SizedBox(height: AppTheme.spacing4),
-                      Text(
-                        '$batchCount ${batchCount == 1 ? 'batch' : 'batches'}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _ProductImage(imageUrl: imageUrl),
                 ),
-              ),
-
-              // More options menu
-              if (onEdit != null || onDelete != null)
-                _OptionsMenu(onEdit: onEdit, onDelete: onDelete),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (category != null) ...[
+                        const SizedBox(height: 8),
+                        _CategoryChip(label: category!),
+                      ],
+                      if (batchCount != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '$batchCount ${batchCount == 1 ? 'batch' : 'batches'}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.65),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (onEdit != null || onDelete != null)
+                  _OptionsMenu(onEdit: onEdit, onDelete: onDelete),
+              ],
+            ),
           ),
         ),
       ),
@@ -104,7 +112,7 @@ class _ProductImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 80.0;
+    const size = 64.0;
 
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return Image.network(
@@ -127,14 +135,15 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       width: size,
       height: size,
-      color: AppColors.surface,
-      child: const Icon(
+      color: cs.surface,
+      child: Icon(
         Icons.image_outlined,
-        color: AppColors.textHint,
-        size: 32,
+        color: cs.onSurface.withValues(alpha: 0.35),
+        size: 28,
       ),
     );
   }
@@ -148,20 +157,19 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing8,
-        vertical: 2,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+        color: cs.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: AppColors.textSecondary,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: cs.primary,
+          fontWeight: FontWeight.w600,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -178,10 +186,15 @@ class _OptionsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return PopupMenuButton<_MenuAction>(
-      icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+      icon: Icon(
+        Icons.more_vert,
+        color: cs.onSurface.withValues(alpha: 0.55),
+      ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        borderRadius: BorderRadius.circular(12),
       ),
       onSelected: (action) {
         if (action == _MenuAction.edit) onEdit?.call();
@@ -189,27 +202,41 @@ class _OptionsMenu extends StatelessWidget {
       },
       itemBuilder: (_) => [
         if (onEdit != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _MenuAction.edit,
             child: Row(
               children: [
-                Icon(Icons.edit_outlined, size: 18),
-                SizedBox(width: AppTheme.spacing8),
-                Text('Edit'),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: cs.onSurface,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Edit',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurface,
+                  ),
+                ),
               ],
             ),
           ),
         if (onDelete != null)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: _MenuAction.delete,
             child: Row(
               children: [
-                Icon(Icons.delete_outline,
-                    size: 18, color: AppColors.error),
-                SizedBox(width: AppTheme.spacing8),
+                Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: cs.error,
+                ),
+                const SizedBox(width: 8),
                 Text(
                   'Delete',
-                  style: TextStyle(color: AppColors.error),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.error,
+                  ),
                 ),
               ],
             ),
