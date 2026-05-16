@@ -17,6 +17,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
+import 'package:unshelf_seller/core/interfaces/i_order_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_wallet_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
@@ -37,6 +38,9 @@ IProductService productService(ProductServiceRef ref) =>
 
 @Riverpod(keepAlive: true)
 IBatchService batchService(BatchServiceRef ref) => locator<IBatchService>();
+
+@Riverpod(keepAlive: true)
+IOrderService orderService(OrderServiceRef ref) => locator<IOrderService>();
 
 @Riverpod(keepAlive: true)
 IWalletService walletService(WalletServiceRef ref) => locator<IWalletService>();

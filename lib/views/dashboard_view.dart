@@ -12,6 +12,7 @@ import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/dashboard_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
+// Provider import retained for StoreViewModel access (not yet migrated).
 import 'package:unshelf_seller/views/add_product_view.dart';
 import 'package:unshelf_seller/views/inventory_view.dart';
 import 'package:unshelf_seller/views/order_details_view.dart';
@@ -31,7 +32,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(dashboardViewModelProvider.notifier).fetchDashboardData();
-      Provider.of<OrderViewModel>(context, listen: false).fetchOrders();
+      ref.read(orderViewModelProvider.notifier).fetchOrders();
       Provider.of<StoreViewModel>(context, listen: false).fetchStoreDetails();
     });
   }
@@ -40,7 +41,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dashboardState = ref.watch(dashboardViewModelProvider);
-    final orderVM = context.watch<OrderViewModel>();
+    final orderState = ref.watch(orderViewModelProvider);
     final storeVM = context.watch<StoreViewModel>();
 
     return Scaffold(
@@ -54,7 +55,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   ref
                       .read(dashboardViewModelProvider.notifier)
                       .fetchDashboardData(),
-                  orderVM.fetchOrders(),
+                  ref.read(orderViewModelProvider.notifier).fetchOrders(),
                 ]);
               },
               child: SingleChildScrollView(
@@ -72,7 +73,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                     const SizedBox(height: AppTheme.spacing32),
 
                     // --- Recent Orders ---
-                    _buildRecentOrdersSection(theme, orderVM),
+                    _buildRecentOrdersSection(theme, orderState),
                     const SizedBox(height: AppTheme.spacing32),
 
                     // --- Quick Actions ---
@@ -168,9 +169,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   // ─── Recent orders section ───
-  Widget _buildRecentOrdersSection(ThemeData theme, OrderViewModel orderVM) {
+  Widget _buildRecentOrdersSection(ThemeData theme, OrderState orderState) {
     // Take the latest 5 orders sorted by date descending
-    final recentOrders = orderVM.orders.toList()
+    final recentOrders = orderState.orders.toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final displayOrders = recentOrders.take(5).toList();
 
@@ -189,7 +190,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             );
           },
         ),
-        if (orderVM.isLoading)
+        if (orderState.isLoading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: AppTheme.spacing24),
             child: Center(

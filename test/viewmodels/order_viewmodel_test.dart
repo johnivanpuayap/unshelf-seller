@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:unshelf_seller/core/constants/status_constants.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/order_model.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 
@@ -24,13 +26,23 @@ OrderModel _makeOrder({
   );
 }
 
+/// Builds a [ProviderContainer] with the order ViewModel's service
+/// dependency overridden with the given mock.
+ProviderContainer _makeContainer(MockOrderService orderService) {
+  final container = ProviderContainer(overrides: [
+    orderServiceProvider.overrideWithValue(orderService),
+  ]);
+  addTearDown(container.dispose);
+  return container;
+}
+
 void main() {
   late MockOrderService mockService;
-  late OrderViewModel vm;
+  late ProviderContainer container;
 
   setUp(() {
     mockService = MockOrderService();
-    vm = OrderViewModel(orderService: mockService);
+    container = _makeContainer(mockService);
   });
 
   group('fetchOrders', () {
@@ -41,17 +53,20 @@ void main() {
       ];
       mockService.ordersResult = orders;
 
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
 
-      expect(vm.orders, equals(orders));
-      expect(vm.isLoading, isFalse);
+      final state = container.read(orderViewModelProvider);
+      expect(state.orders, equals(orders));
+      expect(state.isLoading, isFalse);
       expect(mockService.lastForToday, isTrue);
     });
 
     test('fetchOrdersHistory passes forToday=false', () async {
       mockService.ordersResult = [];
 
-      await vm.fetchOrdersHistory();
+      await container
+          .read(orderViewModelProvider.notifier)
+          .fetchOrdersHistory();
 
       expect(mockService.lastForToday, isFalse);
     });
@@ -64,11 +79,10 @@ void main() {
         _makeOrder(id: '2', status: StatusConstants.completed),
         _makeOrder(id: '3', status: StatusConstants.cancelled),
       ];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
+      container.read(orderViewModelProvider.notifier).currentStatus = 'All';
 
-      vm.currentStatus = 'All';
-
-      expect(vm.filteredOrders.length, 3);
+      expect(container.read(orderViewModelProvider).filteredOrders.length, 3);
     });
 
     test('filters orders by specific status', () async {
@@ -77,13 +91,14 @@ void main() {
         _makeOrder(id: '2', status: StatusConstants.completed),
         _makeOrder(id: '3', status: StatusConstants.pending),
       ];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
+      container.read(orderViewModelProvider.notifier).currentStatus =
+          StatusConstants.pending;
 
-      vm.currentStatus = StatusConstants.pending;
-
-      expect(vm.filteredOrders.length, 2);
+      final filtered = container.read(orderViewModelProvider).filteredOrders;
+      expect(filtered.length, 2);
       expect(
-        vm.filteredOrders.every((o) => o.status == StatusConstants.pending),
+        filtered.every((o) => o.status == StatusConstants.pending),
         isTrue,
       );
     });
@@ -103,10 +118,9 @@ void main() {
             status: StatusConstants.pending,
             createdAt: DateTime(2026, 2, 1)),
       ];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
 
-      final filtered = vm.filteredOrders;
-
+      final filtered = container.read(orderViewModelProvider).filteredOrders;
       expect(filtered[0].id, '2'); // March (newest)
       expect(filtered[1].id, '3'); // February
       expect(filtered[2].id, '1'); // January (oldest)
@@ -123,11 +137,10 @@ void main() {
             status: StatusConstants.pending,
             createdAt: DateTime(2026, 1, 1)),
       ];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
+      container.read(orderViewModelProvider.notifier).sortOrder = 'Ascending';
 
-      vm.sortOrder = 'Ascending';
-      final filtered = vm.filteredOrders;
-
+      final filtered = container.read(orderViewModelProvider).filteredOrders;
       expect(filtered[0].id, '2'); // January (oldest first)
       expect(filtered[1].id, '1'); // March
     });
@@ -138,10 +151,11 @@ void main() {
       final order = _makeOrder(id: '1', status: StatusConstants.pending);
       mockService.orderResult = order;
 
-      await vm.selectOrder('1');
+      await container.read(orderViewModelProvider.notifier).selectOrder('1');
 
-      expect(vm.selectedOrder, equals(order));
-      expect(vm.isLoading, isFalse);
+      final state = container.read(orderViewModelProvider);
+      expect(state.selectedOrder, equals(order));
+      expect(state.isLoading, isFalse);
     });
   });
 
@@ -151,63 +165,68 @@ void main() {
     setUp(() async {
       order = _makeOrder(id: '1', status: StatusConstants.pending);
       mockService.ordersResult = [order];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
       mockService.orderResult = order;
-      await vm.selectOrder('1');
+      await container.read(orderViewModelProvider.notifier).selectOrder('1');
     });
 
     test('approveOrder updates status to Processing', () async {
-      await vm.approveOrder();
+      await container.read(orderViewModelProvider.notifier).approveOrder();
 
-      expect(vm.selectedOrder!.status, StatusConstants.processing);
-      expect(vm.orders.first.status, StatusConstants.processing);
+      final state = container.read(orderViewModelProvider);
+      expect(state.selectedOrder!.status, StatusConstants.processing);
+      expect(state.orders.first.status, StatusConstants.processing);
       expect(mockService.approveOrderCalled, 1);
     });
 
     test('cancelOrder updates status and sets cancelledAt', () async {
-      await vm.cancelOrder();
+      await container.read(orderViewModelProvider.notifier).cancelOrder();
 
-      expect(vm.selectedOrder!.status, StatusConstants.cancelled);
-      expect(vm.selectedOrder!.cancelledAt, isNotNull);
-      expect(vm.orders.first.status, StatusConstants.cancelled);
+      final state = container.read(orderViewModelProvider);
+      expect(state.selectedOrder!.status, StatusConstants.cancelled);
+      expect(state.selectedOrder!.cancelledAt, isNotNull);
+      expect(state.orders.first.status, StatusConstants.cancelled);
       expect(mockService.cancelOrderCalled, 1);
     });
 
     test('fulfillOrder updates status and generates pickupCode', () async {
-      await vm.fulfillOrder();
+      await container.read(orderViewModelProvider.notifier).fulfillOrder();
 
-      expect(vm.selectedOrder!.status, StatusConstants.ready);
-      expect(vm.selectedOrder!.pickupCode, isNotEmpty);
-      expect(vm.selectedOrder!.pickupCode!.length, 8);
-      expect(vm.orders.first.status, StatusConstants.ready);
+      final state = container.read(orderViewModelProvider);
+      expect(state.selectedOrder!.status, StatusConstants.ready);
+      expect(state.selectedOrder!.pickupCode, isNotEmpty);
+      expect(state.selectedOrder!.pickupCode!.length, 8);
+      expect(state.orders.first.status, StatusConstants.ready);
       expect(mockService.fulfillOrderCalled, 1);
     });
 
     test('completeOrder updates status, completedAt, and isPaid', () async {
-      await vm.completeOrder();
+      await container.read(orderViewModelProvider.notifier).completeOrder();
 
-      expect(vm.selectedOrder!.status, StatusConstants.completed);
-      expect(vm.selectedOrder!.completedAt, isNotNull);
-      expect(vm.selectedOrder!.isPaid, isTrue);
-      expect(vm.orders.first.status, StatusConstants.completed);
+      final state = container.read(orderViewModelProvider);
+      expect(state.selectedOrder!.status, StatusConstants.completed);
+      expect(state.selectedOrder!.completedAt, isNotNull);
+      expect(state.selectedOrder!.isPaid, isTrue);
+      expect(state.orders.first.status, StatusConstants.completed);
       expect(mockService.completeOrderCalled, 1);
     });
   });
 
   group('error handling', () {
-    test('service error sets errorMessage via runBusyFuture', () async {
+    test('service error sets errorMessage', () async {
       final order = _makeOrder(id: '1', status: StatusConstants.pending);
       mockService.ordersResult = [order];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
       mockService.orderResult = order;
-      await vm.selectOrder('1');
+      await container.read(orderViewModelProvider.notifier).selectOrder('1');
 
       mockService.errorToThrow = Exception('Network error');
 
-      await vm.approveOrder();
+      await container.read(orderViewModelProvider.notifier).approveOrder();
 
-      expect(vm.errorMessage, contains('Network error'));
-      expect(vm.isLoading, isFalse);
+      final state = container.read(orderViewModelProvider);
+      expect(state.errorMessage, contains('Network error'));
+      expect(state.isLoading, isFalse);
     });
   });
 
@@ -216,27 +235,30 @@ void main() {
       mockService.ordersResult = [
         _makeOrder(id: '1', status: StatusConstants.pending),
       ];
-      await vm.fetchOrders();
-      vm.currentStatus = StatusConstants.pending;
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
+      container.read(orderViewModelProvider.notifier).currentStatus =
+          StatusConstants.pending;
 
-      vm.clear();
+      container.read(orderViewModelProvider.notifier).clear();
 
-      expect(vm.orders, isEmpty);
-      expect(vm.selectedOrder, isNull);
-      expect(vm.currentStatus, 'All');
+      final state = container.read(orderViewModelProvider);
+      expect(state.orders, isEmpty);
+      expect(state.selectedOrder, isNull);
+      expect(state.currentStatus, 'All');
     });
 
     test('clearSelectedOrder nulls only selectedOrder', () async {
       final order = _makeOrder(id: '1', status: StatusConstants.pending);
       mockService.ordersResult = [order];
-      await vm.fetchOrders();
+      await container.read(orderViewModelProvider.notifier).fetchOrders();
       mockService.orderResult = order;
-      await vm.selectOrder('1');
+      await container.read(orderViewModelProvider.notifier).selectOrder('1');
 
-      vm.clearSelectedOrder();
+      container.read(orderViewModelProvider.notifier).clearSelectedOrder();
 
-      expect(vm.selectedOrder, isNull);
-      expect(vm.orders, isNotEmpty);
+      final state = container.read(orderViewModelProvider);
+      expect(state.selectedOrder, isNull);
+      expect(state.orders, isNotEmpty);
     });
   });
 }

@@ -74,6 +74,22 @@ final batchServiceProvider = Provider<IBatchService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BatchServiceRef = ProviderRef<IBatchService>;
+String _$orderServiceHash() => r'7a6b485e3eda0f807df1031a8e19c192437cd3b6';
+
+/// See also [orderService].
+@ProviderFor(orderService)
+final orderServiceProvider = Provider<IOrderService>.internal(
+  orderService,
+  name: r'orderServiceProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$orderServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef OrderServiceRef = ProviderRef<IOrderService>;
 String _$walletServiceHash() => r'0024ab5f573cf93b02a976e289daf41721337bc9';
 
 /// See also [walletService].
