@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/theme.dart';
-import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/authentication/views/reset_password_view.dart';
@@ -35,9 +34,7 @@ void main() async {
   runApp(
     ProviderScope(
       child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => SettingsViewModel()),
-        ],
+        providers: const [],
         child: const MyApp(),
       ),
     ),
