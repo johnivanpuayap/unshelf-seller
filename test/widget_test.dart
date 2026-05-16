@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
+import 'package:unshelf_seller/utils/tokens.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,33 +37,12 @@ void main() {
     });
   });
 
-  group('AppTheme', () {
-    test('spacing scale follows 8dp grid', () {
-      expect(AppTheme.spacing4, 4);
-      expect(AppTheme.spacing8, 8);
-      expect(AppTheme.spacing12, 12);
-      expect(AppTheme.spacing16, 16);
-      expect(AppTheme.spacing24, 24);
-      expect(AppTheme.spacing32, 32);
-      expect(AppTheme.spacing48, 48);
-    });
-
-    test('minimum touch target is 48dp', () {
-      expect(AppTheme.minTouchTarget, 48);
-    });
-
-    test('border radius scale is defined', () {
-      expect(AppTheme.radiusSmall, 8);
-      expect(AppTheme.radiusMedium, 12);
-      expect(AppTheme.radiusLarge, 16);
-      expect(AppTheme.radiusFull, 100);
-    });
-
-    testWidgets('light theme creates valid ThemeData', (tester) async {
+  group('UnshelfTheme', () {
+    testWidgets('light theme is driven by brand-kit tokens', (tester) async {
       late ThemeData theme;
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppTheme.lightTheme,
+          theme: UnshelfTheme.light(),
           home: Builder(
             builder: (context) {
               theme = Theme.of(context);
@@ -73,18 +53,43 @@ void main() {
       );
 
       expect(theme.useMaterial3, isTrue);
-      expect(theme.colorScheme.primary, AppColors.primaryColor);
-      expect(theme.colorScheme.error, AppColors.error);
+      expect(theme.colorScheme.brightness, Brightness.light);
+      expect(theme.colorScheme.primary, UnshelfTokens.colorLightPrimary);
+      expect(theme.colorScheme.secondary, UnshelfTokens.colorLightAccent);
+      expect(theme.colorScheme.error, UnshelfTokens.colorLightDestructive);
+      expect(theme.scaffoldBackgroundColor, UnshelfTokens.colorLightBackground);
       expect(theme.textTheme.displayLarge, isNotNull);
       expect(theme.textTheme.headlineMedium, isNotNull);
       expect(theme.textTheme.bodyMedium, isNotNull);
       expect(theme.textTheme.labelSmall, isNotNull);
     });
 
+    testWidgets('dark theme is driven by brand-kit tokens', (tester) async {
+      late ThemeData theme;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: UnshelfTheme.dark(),
+          home: Builder(
+            builder: (context) {
+              theme = Theme.of(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(theme.useMaterial3, isTrue);
+      expect(theme.colorScheme.brightness, Brightness.dark);
+      expect(theme.colorScheme.primary, UnshelfTokens.colorDarkPrimary);
+      expect(theme.colorScheme.secondary, UnshelfTokens.colorDarkAccent);
+      expect(theme.colorScheme.error, UnshelfTokens.colorDarkDestructive);
+      expect(theme.scaffoldBackgroundColor, UnshelfTokens.colorDarkBackground);
+    });
+
     testWidgets('light theme renders scaffold correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppTheme.lightTheme,
+          theme: UnshelfTheme.light(),
           home: const Scaffold(
             body: Center(child: Text('Unshelf Seller')),
           ),
@@ -92,6 +97,54 @@ void main() {
       );
 
       expect(find.text('Unshelf Seller'), findsOneWidget);
+    });
+
+    testWidgets('bodyLarge renders with DM Sans font family', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: UnshelfTheme.light(),
+          home: Builder(
+            builder: (ctx) => Scaffold(
+              body: Text(
+                'probe-sans',
+                style: Theme.of(ctx).textTheme.bodyLarge,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final textWidget = tester.widget<Text>(find.text('probe-sans'));
+      final fontFamily = textWidget.style?.fontFamily;
+      expect(fontFamily, isNotNull);
+      // GoogleFonts emits a runtime sentinel family without spaces (e.g.
+      // 'DMSans_regular'). Asserting `contains('DMSans')` is the regression
+      // net that proves the GoogleFonts loader is wired in — a raw
+      // `fontFamily: 'DM Sans'` would not match.
+      expect(fontFamily, contains('DMSans'));
+    });
+
+    testWidgets('headlineMedium renders with DM Serif Display font family',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: UnshelfTheme.light(),
+          home: Builder(
+            builder: (ctx) => Scaffold(
+              body: Text(
+                'probe-serif',
+                style: Theme.of(ctx).textTheme.headlineMedium,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final textWidget = tester.widget<Text>(find.text('probe-serif'));
+      final fontFamily = textWidget.style?.fontFamily;
+      expect(fontFamily, isNotNull);
+      // See bodyLarge test above — GoogleFonts emits 'DMSerifDisplay_<variant>'.
+      expect(fontFamily, contains('DMSerifDisplay'));
     });
   });
 }

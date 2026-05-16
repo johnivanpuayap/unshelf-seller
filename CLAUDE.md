@@ -54,3 +54,37 @@ lib/
 - Use `AppLogger` instead of `print()` for all logging
 - Use constants from `core/constants/` instead of hardcoded strings
 - Credentials live in `.env`, never hardcoded in source
+
+## Unshelf Rebrand (sub-project 2)
+
+- **Sub-project:** 2 of 5 in the broader Unshelf rebrand
+- **Spec:** `docs/crucible/specs/2026-05-16-seller-rebrand-design.md`
+- **Plan:** `docs/crucible/plans/2026-05-16-seller-rebrand-implementation.md`
+- **Brand kit (submodule):** `brand-kit/docs/crucible/`
+- **Shared auth contract:** `brand-kit/docs/crucible/auth-screens.md`
+
+## After cloning
+
+```bash
+git submodule update --init --recursive
+flutter pub get
+```
+
+The brand kit is private — needs SSH access to `johnivanpuayap/unshelf-brand-kit`.
+
+## Locked decisions (rebrand)
+
+- **Name + tagline:** Unshelf · Eat well. Waste less.
+- **Palette:** Leaf & Honey (primary `#3F8E4A`)
+- **Typography:** DM Serif Display (display/headline/title) + DM Sans (body/label)
+- **UI style:** Soft Editorial. Pill buttons. 14px card corners. No glassmorphism. No pure-white surfaces.
+- **State management:** Riverpod 4.x with `@riverpod` codegen (after Phase 2 — Provider during Phase 1)
+- **Maps:** flutter_map + OSM (already in place)
+- **Role:** all auth flow registers users with `type: 'seller'`
+- **Uniqueness rule** (`[[unshelf-buyer-seller-uniqueness]]`): seller and buyer share brand tokens + auth flow ONLY. No shared UI components.
+
+## Two-remote constraint
+
+- `origin` → `git@github.com:Unshelf-SoftEng/Unshelf_Seller.git` (ORG — never push here)
+- `personal` → `git@github.com:johnivanpuayap/unshelf-seller.git` (TARGET — push here)
+- All `gh` commands MUST include `--repo johnivanpuayap/unshelf-seller`. `gh repo set-default johnivanpuayap/unshelf-seller` is set.

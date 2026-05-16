@@ -35,6 +35,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_launcher_icons: ^0.14.2
   logger: ^2.5.0
+  flutter_svg: ^2.0.10
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +47,7 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/images/logos/
     - assets/icons/
 
 flutter_launcher_icons:

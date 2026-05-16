@@ -55,6 +55,7 @@ void main() async {
     ),
   );
   setupLocator();
+  UnshelfTheme.preloadFonts();
   runApp(
     MultiProvider(
       providers: [
@@ -159,7 +160,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Unshelf',
-      theme: AppTheme.lightTheme,
+      theme: UnshelfTheme.light(),
+      darkTheme: UnshelfTheme.dark(),
+      themeMode: ThemeMode.system,
       home: _getInitialScreen(),
     );
   }
