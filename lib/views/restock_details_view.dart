@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
 
-class RestockDetailsView extends StatefulWidget {
+class RestockDetailsView extends ConsumerStatefulWidget {
   const RestockDetailsView({super.key});
 
   @override
-  State<RestockDetailsView> createState() => _RestockDetailsViewState();
+  ConsumerState<RestockDetailsView> createState() =>
+      _RestockDetailsViewState();
 }
 
-class _RestockDetailsViewState extends State<RestockDetailsView> {
+class _RestockDetailsViewState extends ConsumerState<RestockDetailsView> {
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<RestockViewModel>(context);
+    final viewModel = ref.watch(restockViewModelProvider);
+    final notifier = ref.read(restockViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -81,7 +83,7 @@ class _RestockDetailsViewState extends State<RestockDetailsView> {
                                 lastDate: DateTime(2101),
                               );
                               if (pickedDate != null) {
-                                viewModel.updateExpiryDate(
+                                notifier.updateExpiryDate(
                                     product, pickedDate);
                               }
                             },
@@ -139,7 +141,8 @@ class _RestockDetailsViewState extends State<RestockDetailsView> {
                   return;
                 }
 
-                await viewModel.batchRestock(viewModel.selectedProducts);
+                await notifier.batchRestock(viewModel.selectedProducts);
+                if (!context.mounted) return;
                 Navigator.popUntil(context, (route) => route.isFirst);
               },
               style: ElevatedButton.styleFrom(

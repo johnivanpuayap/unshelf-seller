@@ -20,7 +20,6 @@ import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/authentication/views/reset_password_view.dart';
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
 
@@ -54,11 +53,6 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => StoreLocationViewModel(
               storeService: locator<IStoreService>(),
-            ),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => RestockViewModel(
-              productService: locator<IProductService>(),
             ),
           ),
           ChangeNotifierProvider(create: (_) => SettingsViewModel()),

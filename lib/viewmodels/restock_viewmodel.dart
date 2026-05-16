@@ -1,49 +1,105 @@
-import 'package:unshelf_seller/models/bundle_model.dart';
-import 'package:unshelf_seller/models/batch_model.dart';
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
+import 'package:unshelf_seller/models/batch_model.dart';
+import 'package:unshelf_seller/models/bundle_model.dart';
 
-class RestockViewModel extends BaseViewModel {
-  final IProductService _productService;
+part 'restock_viewmodel.g.dart';
 
-  List<BatchModel> _products = [];
-  final List<BatchModel> _selectedProducts = [];
-  final List<BundleModel> _bundles = [];
-  final List<BundleModel> _selectedBundles = [];
+/// Immutable state for the restock selection + details screens.
+///
+/// NOTE: `BatchModel` is itself mutable; selected products are mutated in
+/// place by the consumer screens (e.g. `product.stock = quantity`,
+/// `product.expiryDate = newDate`). `copyWith` is still used to trigger
+/// watchers when list membership changes.
+class RestockState {
+  final bool isLoading;
+  final String? errorMessage;
+  final List<BatchModel> products;
+  final List<BatchModel> selectedProducts;
+  final List<BundleModel> bundles;
+  final List<BundleModel> selectedBundles;
+  final String error;
 
-  String _error = '';
+  const RestockState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.products,
+    required this.selectedProducts,
+    required this.bundles,
+    required this.selectedBundles,
+    required this.error,
+  });
 
-  List<BatchModel> get products => _products;
-  List<BatchModel> get selectedProducts => _selectedProducts;
-  List<BundleModel> get bundles => _bundles;
-  List<BundleModel> get selectedBundles => _selectedBundles;
+  factory RestockState.initial() => const RestockState(
+        isLoading: false,
+        errorMessage: null,
+        products: <BatchModel>[],
+        selectedProducts: <BatchModel>[],
+        bundles: <BundleModel>[],
+        selectedBundles: <BundleModel>[],
+        error: '',
+      );
 
-  String get error => _error;
+  RestockState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    List<BatchModel>? products,
+    List<BatchModel>? selectedProducts,
+    List<BundleModel>? bundles,
+    List<BundleModel>? selectedBundles,
+    String? error,
+  }) {
+    return RestockState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      products: products ?? this.products,
+      selectedProducts: selectedProducts ?? this.selectedProducts,
+      bundles: bundles ?? this.bundles,
+      selectedBundles: selectedBundles ?? this.selectedBundles,
+      error: error ?? this.error,
+    );
+  }
 
-  RestockViewModel({required IProductService productService})
-      : _productService = productService;
+  static const _sentinel = Object();
+}
+
+/// Restock ViewModel — backs the restock selection + details screens.
+///
+/// NOTE: `batchRestock` currently has a placeholder implementation
+/// (no-op apart from loading-state churn); preserved from the original
+/// ChangeNotifier — Phase 4 will wire it up to a real batch update service.
+@riverpod
+class RestockViewModel extends _$RestockViewModel {
+  @override
+  RestockState build() => RestockState.initial();
 
   Future<void> fetchProducts() async {
-    setLoading(true);
+    state = state.copyWith(isLoading: true);
 
     try {
-      final allProducts = await _productService.getProducts();
+      final allProducts =
+          await ref.read(productServiceProvider).getProducts();
 
       final List<BatchModel> batches = [];
       for (final product in allProducts) {
-        final productBatches = await _productService.getProductBatches(product);
+        final productBatches =
+            await ref.read(productServiceProvider).getProductBatches(product);
         if (productBatches != null) {
           batches.addAll(productBatches);
         }
       }
 
-      _products = batches;
+      state = state.copyWith(products: batches, isLoading: false);
     } catch (e) {
       AppLogger.error('Failed to fetch products for restock', e);
-      _error = 'Failed to fetch products: $e';
-    } finally {
-      setLoading(false);
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to fetch products: $e',
+      );
     }
   }
 
@@ -51,12 +107,12 @@ class RestockViewModel extends BaseViewModel {
     if (contain(product)) {
       return;
     }
-    _selectedProducts.add(product);
-    notifyListeners();
+    final updated = List<BatchModel>.from(state.selectedProducts)..add(product);
+    state = state.copyWith(selectedProducts: updated);
   }
 
   bool contain(BatchModel product) {
-    for (var selected in _selectedProducts) {
+    for (var selected in state.selectedProducts) {
       if (product.batchNumber == selected.batchNumber) {
         return true;
       }
@@ -66,25 +122,29 @@ class RestockViewModel extends BaseViewModel {
   }
 
   void removeSelectedProduct(BatchModel product) {
-    _selectedProducts.removeWhere((p) => p.batchNumber == product.batchNumber);
-    notifyListeners();
+    final updated = state.selectedProducts
+        .where((p) => p.batchNumber != product.batchNumber)
+        .toList();
+    state = state.copyWith(selectedProducts: updated);
   }
 
   Future<void> batchRestock(List<BatchModel> productsToRestock) async {
-    setLoading(true);
+    state = state.copyWith(isLoading: true);
 
     try {
       // Batch restock logic placeholder - implement when batch update service
       // method is available
     } catch (e) {
-      _error = 'Failed to restock products: $e';
+      state = state.copyWith(error: 'Failed to restock products: $e');
     } finally {
-      setLoading(false);
+      state = state.copyWith(isLoading: false);
     }
   }
 
   void updateExpiryDate(BatchModel product, DateTime newDate) {
+    // Preserve the original mutable-model behavior: mutate the BatchModel
+    // in place, then emit a state copy to trigger watchers.
     product.expiryDate = newDate;
-    notifyListeners();
+    state = state.copyWith();
   }
 }

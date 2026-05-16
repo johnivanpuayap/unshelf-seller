@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'restock_details_view.dart';
 
-class RestockSelectionView extends StatefulWidget {
+class RestockSelectionView extends ConsumerStatefulWidget {
   const RestockSelectionView({super.key});
 
   @override
-  State<RestockSelectionView> createState() => _RestockSelectionViewState();
+  ConsumerState<RestockSelectionView> createState() =>
+      _RestockSelectionViewState();
 }
 
-class _RestockSelectionViewState extends State<RestockSelectionView> {
+class _RestockSelectionViewState extends ConsumerState<RestockSelectionView> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel = Provider.of<RestockViewModel>(context, listen: false);
-      viewModel.fetchProducts();
+      ref.read(restockViewModelProvider.notifier).fetchProducts();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<RestockViewModel>(context);
+    final viewModel = ref.watch(restockViewModelProvider);
+    final notifier = ref.read(restockViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -57,7 +58,7 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                         itemCount: viewModel.products.length,
                         itemBuilder: (context, index) {
                           final product = viewModel.products[index];
-                          bool isSelected = viewModel.contain(product);
+                          bool isSelected = notifier.contain(product);
 
                           return Card(
                             elevation: AppTheme.elevationHigh - 1,
@@ -111,14 +112,10 @@ class _RestockSelectionViewState extends State<RestockSelectionView> {
                                 size: 30,
                               ),
                               onTap: () {
-                                setState(() {
-                                  viewModel.addSelectedProduct(product);
-                                });
+                                notifier.addSelectedProduct(product);
                               },
                               onLongPress: () {
-                                setState(() {
-                                  viewModel.removeSelectedProduct(product);
-                                });
+                                notifier.removeSelectedProduct(product);
                               },
                             ),
                           );
