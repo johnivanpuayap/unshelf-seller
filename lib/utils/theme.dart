@@ -136,3 +136,50 @@ abstract class UnshelfTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       );
 }
+
+/// Deprecated compatibility shim bridging legacy [AppTheme] callers to the new
+/// [UnshelfTheme] / [UnshelfTokens] API.
+///
+/// Numeric constants forward to [UnshelfTokens] where a matching token exists
+/// (the 4/8/16/20/24/32/48 spacing scale and the 8/14/20/999 radius scale). The
+/// `spacing12` and `radiusMedium` names are kept for compile-compatibility and
+/// map to the nearest scale value (16 and 14 respectively) — Phase 4 will
+/// replace these call sites with semantic [UnshelfTokens] references.
+///
+/// Elevations are not tokenized in the brand kit yet, so the values here are
+/// hand-picked from the Material 3 elevation steps (0/2/6/12 dp).
+@Deprecated(
+  'Use UnshelfTheme / UnshelfTokens / Theme.of(context). '
+  'To be removed when Phase 4 finishes redesigning screens.',
+)
+abstract class AppTheme {
+  // ThemeData getters — forward to the new API.
+  static ThemeData get lightTheme => UnshelfTheme.light();
+  static ThemeData get darkTheme => UnshelfTheme.dark();
+
+  // Spacing scale — aligned to UnshelfTokens (4/8/16/20/24/32/48).
+  // spacing12 is not on the scale; map to spaceBase (16) so callers still
+  // align to the design system. Phase 4 will adjust per-screen.
+  static const double spacing4 = UnshelfTokens.spaceXs;
+  static const double spacing8 = UnshelfTokens.spaceSm;
+  static const double spacing12 = UnshelfTokens.spaceBase;
+  static const double spacing16 = UnshelfTokens.spaceBase;
+  static const double spacing24 = UnshelfTokens.spaceLg;
+  static const double spacing32 = UnshelfTokens.spaceXl;
+  static const double spacing48 = UnshelfTokens.space2xl;
+
+  // Radius scale — aligned to UnshelfTokens (8/14/20/999).
+  static const double radiusSmall = UnshelfTokens.radiusSm;
+  static const double radiusMedium = UnshelfTokens.radiusBase;
+  static const double radiusLarge = UnshelfTokens.radiusLg;
+  static const double radiusFull = UnshelfTokens.radiusPill;
+
+  // Elevation steps (Material 3 dp). Not tokenized yet.
+  static const double elevationNone = 0;
+  static const double elevationLow = 2;
+  static const double elevationMedium = 6;
+  static const double elevationHigh = 12;
+
+  // Minimum touch target (WCAG 2.5.5 — 48 dp).
+  static const double minTouchTarget = UnshelfTokens.space2xl;
+}
