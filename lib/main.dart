@@ -11,7 +11,6 @@ import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/authentication/views/reset_password_view.dart';
@@ -40,8 +39,6 @@ void main() async {
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => SettingsViewModel()),
-          ChangeNotifierProvider(
-              create: (_) => UserProfileViewModel(userProfile: null)),
           ChangeNotifierProvider(
             create: (_) => NotificationViewModel(
               notificationService: locator<INotificationService>(),
