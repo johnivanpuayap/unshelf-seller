@@ -1,102 +1,148 @@
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/batch_model.dart';
 
-class SelectProductsViewModel extends BaseViewModel {
-  final IBatchService _batchService;
-  final IProductService _productService;
+part 'select_products_viewmodel.g.dart';
 
-  SelectProductsViewModel({
-    required IBatchService batchService,
-    required IProductService productService,
-  })  : _batchService = batchService,
-        _productService = productService;
+/// Immutable state for the bundle product-selection screen.
+///
+/// NOTE: `BatchModel.product` is set by-mutation in `fetchAllBatches`
+/// (preserved from the original ChangeNotifier). `sortItems` mutates
+/// `filteredItems` in place before reassigning state to trigger watchers.
+class SelectProductsState {
+  final bool isLoading;
+  final String? errorMessage;
+  final List<BatchModel> items;
+  final List<BatchModel> filteredItems;
+  final Map<String, BatchModel> selectedItems;
+  final String sortBy;
+  final String searchQuery;
 
-  Map<String, BatchModel> _selectedItems = {};
-  Map<String, BatchModel> get selectedItems => _selectedItems;
+  const SelectProductsState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.items,
+    required this.filteredItems,
+    required this.selectedItems,
+    required this.sortBy,
+    required this.searchQuery,
+  });
 
-  List<BatchModel> _items = [];
-  List<BatchModel> get items => _items;
+  factory SelectProductsState.initial() => const SelectProductsState(
+        isLoading: false,
+        errorMessage: null,
+        items: <BatchModel>[],
+        filteredItems: <BatchModel>[],
+        selectedItems: <String, BatchModel>{},
+        sortBy: 'expiryDate',
+        searchQuery: '',
+      );
 
-  String _sortBy = 'expiryDate';
-  String get sortBy => _sortBy;
+  SelectProductsState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    List<BatchModel>? items,
+    List<BatchModel>? filteredItems,
+    Map<String, BatchModel>? selectedItems,
+    String? sortBy,
+    String? searchQuery,
+  }) {
+    return SelectProductsState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      items: items ?? this.items,
+      filteredItems: filteredItems ?? this.filteredItems,
+      selectedItems: selectedItems ?? this.selectedItems,
+      sortBy: sortBy ?? this.sortBy,
+      searchQuery: searchQuery ?? this.searchQuery,
+    );
+  }
 
-  String _searchQuery = '';
-  List<BatchModel> get filteredItems => _filteredItems;
-  List<BatchModel> _filteredItems = [];
+  static const _sentinel = Object();
+}
+
+/// Select-products ViewModel — backs the bundle product-selection screen.
+@riverpod
+class SelectProductsViewModel extends _$SelectProductsViewModel {
+  @override
+  SelectProductsState build() => SelectProductsState.initial();
 
   Future<void> fetchAllBatches() async {
-    setLoading(true);
-    notifyListeners();
+    state = state.copyWith(isLoading: true);
 
-    _items = await _batchService.getAllBatches();
+    final items = await ref.read(batchServiceProvider).getAllBatches();
 
-    final List<Future<void>> productFutures = _items.map((item) async {
-      item.product = await _productService.getProduct(item.productId);
+    final List<Future<void>> productFutures = items.map((item) async {
+      item.product =
+          await ref.read(productServiceProvider).getProduct(item.productId);
     }).toList();
 
     await Future.wait(productFutures);
 
-    _items.removeWhere((item) => item.product == null);
+    items.removeWhere((item) => item.product == null);
 
-    _filteredItems = _items;
-    setLoading(false);
-
-    notifyListeners();
+    state = state.copyWith(
+      isLoading: false,
+      items: items,
+      filteredItems: items,
+    );
   }
 
   // Method to add a product to the bundle
   void addProductToBundle(String batchNumber) {
-    if (!_selectedItems.keys.contains(batchNumber)) {
-      _selectedItems[batchNumber] =
-          _items.firstWhere((product) => product.batchNumber == batchNumber);
-      notifyListeners();
+    if (!state.selectedItems.keys.contains(batchNumber)) {
+      final updated = Map<String, BatchModel>.from(state.selectedItems);
+      updated[batchNumber] = state.items
+          .firstWhere((product) => product.batchNumber == batchNumber);
+      state = state.copyWith(selectedItems: updated);
     }
   }
 
   // Method to remove a product from the bundle
   void removeProductFromBundle(String batchNumber) {
-    _selectedItems.remove(batchNumber);
-    notifyListeners();
+    final updated = Map<String, BatchModel>.from(state.selectedItems);
+    updated.remove(batchNumber);
+    state = state.copyWith(selectedItems: updated);
   }
 
   void updateSearchQuery(String query) {
-    _searchQuery = query;
-    _filterItems();
-    notifyListeners();
+    final filtered = _filterItems(query);
+    state = state.copyWith(searchQuery: query, filteredItems: filtered);
   }
 
   void sortItems(String sortBy) {
+    // Preserve in-place sort behavior, then emit a new state.
+    final sorted = List<BatchModel>.from(state.filteredItems);
+    String nextSortBy = state.sortBy;
     if (sortBy == 'name') {
-      _sortBy = 'name';
-      filteredItems.sort((a, b) => a.product!.name.compareTo(b.product!.name));
+      nextSortBy = 'name';
+      sorted.sort((a, b) => a.product!.name.compareTo(b.product!.name));
     } else if (sortBy == 'expiryDate') {
-      _sortBy = 'expiryDate';
-      filteredItems.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
+      nextSortBy = 'expiryDate';
+      sorted.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
     }
-    notifyListeners();
+    state = state.copyWith(sortBy: nextSortBy, filteredItems: sorted);
   }
 
-  void _filterItems() {
-    if (_searchQuery.isEmpty) {
-      _filteredItems = _items;
-    } else {
-      AppLogger.debug('Filtering items');
-
-      _filteredItems = _items.where((item) {
-        final name = item.product?.name.toLowerCase();
-        final query = _searchQuery.toLowerCase();
-        return name!.contains(query);
-      }).toList();
-
-      AppLogger.debug('Filtered items: $_filteredItems');
+  List<BatchModel> _filterItems(String query) {
+    if (query.isEmpty) {
+      return state.items;
     }
+    AppLogger.debug('Filtering items');
+    final result = state.items.where((item) {
+      final name = item.product?.name.toLowerCase();
+      final q = query.toLowerCase();
+      return name!.contains(q);
+    }).toList();
+    AppLogger.debug('Filtered items: $result');
+    return result;
   }
 
   void clearSelection() {
-    _selectedItems = {};
-    notifyListeners();
+    state = state.copyWith(selectedItems: <String, BatchModel>{});
   }
 }
