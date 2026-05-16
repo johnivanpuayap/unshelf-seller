@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
-import 'package:unshelf_seller/components/custom_app_bar.dart';
-import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/views/product_details_view.dart';
 
+/// Add-product form, structured to the Phase 1 Quality Bar:
+/// SafeArea + Center + SingleChildScrollView + maxWidth 420 + Form +
+/// _FieldLabel pattern, mirroring the auth screens.
 class AddProductView extends ConsumerWidget {
   final VoidCallback onProductAdded;
 
@@ -15,211 +14,306 @@ class AddProductView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final viewModel = ref.watch(productViewModelProvider);
+    final state = ref.watch(productViewModelProvider);
     final notifier = ref.read(productViewModelProvider.notifier);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final tt = theme.textTheme;
+
     return Scaffold(
-      appBar: CustomAppBar(
-          title: 'Enter Product Details',
-          onBackPressed: () {
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
             notifier.clearData();
             Navigator.pop(context);
-          }),
-      body: viewModel.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryColor,
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
-              child: Column(
-                children: [
-                  Form(
-                    key: notifier.formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Product Image',
-                              style: Theme.of(context).textTheme.titleSmall,
+          },
+        ),
+        title: Text(
+          'Add product',
+          style: tt.titleLarge?.copyWith(color: cs.onSurface),
+        ),
+        centerTitle: false,
+      ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: notifier.formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'List a new product',
+                      style: tt.headlineMedium?.copyWith(color: cs.onSurface),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Add the basics now — you'll add batches with stock and expiry on the next step.",
+                      style: tt.bodyMedium?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Product image
+                    _FieldLabel('Product image', color: cs.onSurface),
+                    const SizedBox(height: 8),
+                    _ImagePickerBox(
+                      data: state.mainImageState.data,
+                      error: state.errorFound,
+                      onPick: () => notifier.pickImage(true),
+                      onRemove: state.mainImageState.data == null
+                          ? null
+                          : () => notifier.deleteImage(true, null),
+                    ),
+                    if (state.errorFound) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Product image is required',
+                        style: tt.bodySmall?.copyWith(color: cs.error),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+
+                    // Name
+                    _FieldLabel('Name', color: cs.onSurface),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: notifier.nameController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        hintText: 'e.g. Whole-wheat bread',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Product name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Description
+                    _FieldLabel('Description', color: cs.onSurface),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: notifier.descriptionController,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.newline,
+                      decoration: const InputDecoration(
+                        hintText:
+                            "What's inside, ingredients, allergens, anything buyers should know…",
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Description is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Category
+                    _FieldLabel('Category', color: cs.onSurface),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: state.selectedCategory.isEmpty
+                          ? null
+                          : state.selectedCategory,
+                      items: notifier.categories
+                          .map(
+                            (cat) => DropdownMenuItem<String>(
+                              value: cat,
+                              child: Text(cat),
                             ),
-                            const SizedBox(height: AppTheme.spacing8),
-                            GestureDetector(
-                              onTap: () => notifier.pickImage(true),
-                              child: Container(
-                                width: double.infinity,
-                                height: 350,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: viewModel.errorFound
-                                        ? AppColors.error
-                                        : AppColors.lightColor,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                      AppTheme.radiusSmall),
-                                ),
-                                child: viewModel.mainImageState.data != null
-                                    ? Stack(
-                                        children: [
-                                          Center(
-                                            child: Image.memory(
-                                              viewModel.mainImageState.data!,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.add_a_photo,
-                                                color: AppColors.textPrimary),
-                                            Text(
-                                              'Click to Add Main Image',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            if (viewModel.mainImageState.data != null)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.error,
-                                      foregroundColor: Colors.white,
-                                      alignment: Alignment.center,
-                                      minimumSize: const Size(50, 30),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            AppTheme.radiusSmall),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      notifier.deleteImage(true, null);
-                                    },
-                                    child: Text(
-                                      'Remove',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall
-                                          ?.copyWith(color: Colors.white),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppTheme.spacing8),
-                                  Text(
-                                    'You can change the main image by clicking on the image',
-                                    style:
-                                        Theme.of(context).textTheme.labelSmall,
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                        if (viewModel.errorFound)
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(top: AppTheme.spacing8),
-                            child: Text(
-                              'Main image is required',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: AppColors.error),
-                            ),
-                          ),
-                        const SizedBox(height: AppTheme.spacing16),
-                        TextFormField(
-                          controller: notifier.nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a product name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppTheme.spacing16),
-                        TextFormField(
-                          controller: notifier.descriptionController,
-                          decoration: const InputDecoration(
-                            labelText: 'Description',
-                          ),
-                          maxLines: 3,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a description';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppTheme.spacing16),
-                        DropdownButtonFormField<String>(
-                          initialValue: viewModel.selectedCategory.isEmpty
-                              ? null
-                              : viewModel.selectedCategory,
-                          items: notifier.categories.map((String category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category),
-                            );
-                          }).toList(),
-                          decoration: const InputDecoration(
-                            labelText: 'Category',
-                          ),
-                          onChanged: (String? newValue) {
-                            notifier.setSelectedCategory(newValue!);
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppTheme.spacing16),
-                        Align(
-                          alignment: Alignment.center,
-                          child: CustomButton(
-                            text: 'Add Product',
-                            onPressed: () async {
-                              bool success = await notifier
-                                  .addProductWithValidation(context);
-                              if (success) {
-                                onProductAdded();
+                          )
+                          .toList(),
+                      decoration: const InputDecoration(
+                        hintText: 'Select a category',
+                      ),
+                      onChanged: (value) {
+                        if (value != null) {
+                          notifier.setSelectedCategory(value);
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Category is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Primary CTA
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: state.isLoading
+                            ? null
+                            : () async {
+                                final added = await notifier
+                                    .addProductWithValidation(context);
+                                if (!added) return;
                                 final newId = ref
                                     .read(productViewModelProvider)
                                     .selectedProductId;
+                                onProductAdded();
                                 notifier.clearData();
                                 if (!context.mounted) return;
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => ProductDetailsView(
-                                          productId: newId, isNew: true)),
+                                    builder: (_) => ProductDetailsView(
+                                      productId: newId,
+                                      isNew: true,
+                                    ),
+                                  ),
                                 );
-                              }
-                            },
+                              },
+                        child: state.isLoading
+                            ? SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: cs.onPrimary,
+                                ),
+                              )
+                            : Text(
+                                'Add product',
+                                style: tt.labelLarge
+                                    ?.copyWith(color: cs.onPrimary),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Image picker box
+// ────────────────────────────────────────────────────────────────────────────
+
+class _ImagePickerBox extends StatelessWidget {
+  const _ImagePickerBox({
+    required this.data,
+    required this.error,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final dynamic data; // Uint8List? — kept dynamic to avoid an extra import
+  final bool error;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final borderColor = error
+        ? cs.error
+        : cs.onSurface.withValues(alpha: 0.12);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          onTap: onPick,
+          child: Container(
+            height: 220,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: borderColor, width: error ? 1.5 : 1),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: data != null
+                ? Image.memory(data, fit: BoxFit.cover)
+                : Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Icon(
+                            Icons.add_a_photo_outlined,
+                            color: cs.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap to add a photo',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'JPG or PNG, ideally square',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.55),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
+          ),
+        ),
+        if (onRemove != null) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onRemove,
+              icon: Icon(Icons.delete_outline, size: 18, color: cs.error),
+              label: Text(
+                'Remove image',
+                style: theme.textTheme.labelLarge?.copyWith(color: cs.error),
               ),
             ),
+          ),
+        ],
+      ],
     );
   }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Field label (copied verbatim from auth screens)
+// ────────────────────────────────────────────────────────────────────────────
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text, {required this.color});
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+      );
 }
