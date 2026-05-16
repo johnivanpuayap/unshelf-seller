@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_bundle_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
@@ -25,7 +24,6 @@ import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/listing_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
@@ -76,12 +74,6 @@ void main() async {
           ChangeNotifierProvider(create: (_) => SettingsViewModel()),
           ChangeNotifierProvider(
               create: (_) => UserProfileViewModel(userProfile: null)),
-          ChangeNotifierProvider(
-            create: (_) => ListingViewModel(
-              productService: locator<IProductService>(),
-              bundleService: locator<IBundleService>(),
-            ),
-          ),
           ChangeNotifierProvider(
             create: (_) => ProductSummaryViewModel(
               productService: locator<IProductService>(),

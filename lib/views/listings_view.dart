@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/product_card.dart';
@@ -16,20 +16,25 @@ import 'package:unshelf_seller/views/edit_product_view.dart';
 import 'package:unshelf_seller/views/product_details_view.dart';
 import 'package:unshelf_seller/views/select_products_view.dart';
 
-class ListingsView extends StatefulWidget {
+class ListingsView extends ConsumerStatefulWidget {
   const ListingsView({super.key});
 
   @override
-  State<ListingsView> createState() => _ListingsViewState();
+  ConsumerState<ListingsView> createState() => _ListingsViewState();
 }
 
-class _ListingsViewState extends State<ListingsView> {
+class _ListingsViewState extends ConsumerState<ListingsView> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    // The pre-Riverpod ListingViewModel fetched items from its
+    // constructor; now we trigger it from the view's first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(listingViewModelProvider.notifier).fetchItems();
+    });
   }
 
   @override
@@ -40,12 +45,15 @@ class _ListingsViewState extends State<ListingsView> {
   }
 
   void _onSearchChanged() {
-    Provider.of<ListingViewModel>(context, listen: false)
+    ref
+        .read(listingViewModelProvider.notifier)
         .updateSearchQuery(_searchController.text);
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(listingViewModelProvider);
+
     return Scaffold(
       body: Column(
         children: [
@@ -56,31 +64,33 @@ class _ListingsViewState extends State<ListingsView> {
               _onSearchChanged();
             },
           ),
-          _FilterRow(),
+          const _FilterRow(),
           Expanded(
-            child: Consumer<ListingViewModel>(
-              builder: (context, viewModel, _) {
-                if (viewModel.isLoading) {
+            child: Builder(
+              builder: (context) {
+                if (state.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (viewModel.filteredItems.isEmpty) {
-                  return _buildEmptyState(context, viewModel.filter);
+                if (state.filteredItems.isEmpty) {
+                  return _buildEmptyState(context, state.filter);
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () => viewModel.fetchItems(),
+                  onRefresh: () => ref
+                      .read(listingViewModelProvider.notifier)
+                      .fetchItems(),
                   color: AppColors.primaryColor,
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppTheme.spacing16,
                       vertical: AppTheme.spacing8,
                     ),
-                    itemCount: viewModel.filteredItems.length,
+                    itemCount: state.filteredItems.length,
                     separatorBuilder: (_, __) =>
                         const SizedBox(height: AppTheme.spacing8),
                     itemBuilder: (context, index) {
-                      final item = viewModel.filteredItems[index];
+                      final item = state.filteredItems[index];
                       return _buildProductCard(context, item);
                     },
                   ),
@@ -155,8 +165,7 @@ class _ListingsViewState extends State<ListingsView> {
               builder: (_) => EditProductView(
                 product: item,
                 onProductAdded: () {
-                  Provider.of<ListingViewModel>(context, listen: false)
-                      .fetchItems();
+                  ref.read(listingViewModelProvider.notifier).fetchItems();
                 },
               ),
             ),
@@ -203,13 +212,14 @@ class _ListingsViewState extends State<ListingsView> {
     );
 
     if (confirmed == true && context.mounted) {
-      await Provider.of<ListingViewModel>(context, listen: false)
+      await ref
+          .read(listingViewModelProvider.notifier)
           .deleteItem(itemId, isProduct);
     }
   }
 
   void _showAddItemSheet(BuildContext context) {
-    final viewModel = Provider.of<ListingViewModel>(context, listen: false);
+    final notifier = ref.read(listingViewModelProvider.notifier);
 
     showModalBottomSheet(
       context: context,
@@ -264,11 +274,11 @@ class _ListingsViewState extends State<ListingsView> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => AddProductView(
-                          onProductAdded: () => viewModel.fetchItems(),
+                          onProductAdded: () => notifier.fetchItems(),
                         ),
                       ),
                     );
-                    viewModel.fetchItems();
+                    notifier.fetchItems();
                   },
                 ),
                 const SizedBox(height: AppTheme.spacing8),
@@ -287,7 +297,7 @@ class _ListingsViewState extends State<ListingsView> {
                         builder: (_) => const SelectProductsView(),
                       ),
                     );
-                    viewModel.fetchItems();
+                    notifier.fetchItems();
                   },
                 ),
               ],
@@ -362,56 +372,55 @@ class _SearchBar extends StatelessWidget {
 
 // ─── Filter Row ─────────────────────────────────────────────────────────────
 
-class _FilterRow extends StatelessWidget {
+class _FilterRow extends ConsumerWidget {
   static const _filters = ['All', 'Products', 'Bundles'];
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  const _FilterRow();
 
-    return Consumer<ListingViewModel>(
-      builder: (context, viewModel, _) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing16,
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final state = ref.watch(listingViewModelProvider);
+    final notifier = ref.read(listingViewModelProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing16,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Wrap(
+              spacing: AppTheme.spacing8,
+              children: _filters.map((label) {
+                final selected = state.filter == label;
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: selected,
+                  onSelected: (_) => notifier.setFilter(label),
+                  selectedColor:
+                      AppColors.primaryColor.withValues(alpha: 0.15),
+                  labelStyle: theme.textTheme.labelLarge?.copyWith(
+                    color: selected
+                        ? AppColors.primaryColor
+                        : AppColors.textSecondary,
+                  ),
+                  showCheckmark: false,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: AppTheme.spacing8,
-                  children: _filters.map((label) {
-                    final selected = viewModel.filter == label;
-                    return ChoiceChip(
-                      label: Text(label),
-                      selected: selected,
-                      onSelected: (_) => viewModel.setFilter(label),
-                      selectedColor:
-                          AppColors.primaryColor.withValues(alpha: 0.15),
-                      labelStyle: theme.textTheme.labelLarge?.copyWith(
-                        color: selected
-                            ? AppColors.primaryColor
-                            : AppColors.textSecondary,
-                      ),
-                      showCheckmark: false,
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    );
-                  }).toList(),
-                ),
-              ),
-              Text(
-                '(${viewModel.filteredItems.length} '
-                '${viewModel.filteredItems.length == 1 ? 'item' : 'items'})',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+          Text(
+            '(${state.filteredItems.length} '
+            '${state.filteredItems.length == 1 ? 'item' : 'items'})',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
