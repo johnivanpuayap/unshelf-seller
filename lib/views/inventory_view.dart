@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/viewmodels/inventory_viewmodel.dart';
@@ -8,14 +8,14 @@ import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/views/batch_history_view.dart';
 import 'package:intl/intl.dart';
 
-class InventoryView extends StatefulWidget {
+class InventoryView extends ConsumerStatefulWidget {
   const InventoryView({super.key});
 
   @override
-  State<InventoryView> createState() => _InventoryViewState();
+  ConsumerState<InventoryView> createState() => _InventoryViewState();
 }
 
-class _InventoryViewState extends State<InventoryView> {
+class _InventoryViewState extends ConsumerState<InventoryView> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> filteredItems = [];
 
@@ -23,18 +23,17 @@ class _InventoryViewState extends State<InventoryView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel = Provider.of<InventoryViewModel>(context, listen: false);
-      viewModel.fetchInventory();
-      filteredItems = viewModel.inventoryItems;
+      ref.read(inventoryViewModelProvider.notifier).fetchInventory();
+      filteredItems = ref.read(inventoryViewModelProvider).inventoryItems;
     });
 
     _searchController.addListener(_onSearchChanged);
   }
 
   void _onSearchChanged() {
-    final viewModel = Provider.of<InventoryViewModel>(context, listen: false);
+    final items = ref.read(inventoryViewModelProvider).inventoryItems;
     setState(() {
-      filteredItems = viewModel.inventoryItems
+      filteredItems = items
           .where((item) => item.name
               .toLowerCase()
               .contains(_searchController.text.toLowerCase()))
@@ -45,13 +44,13 @@ class _InventoryViewState extends State<InventoryView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final viewModel = Provider.of<InventoryViewModel>(context);
+    final inventoryState = ref.watch(inventoryViewModelProvider);
 
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Store Inventory',
           onBackPressed: () {
-            viewModel.clearData();
+            ref.read(inventoryViewModelProvider.notifier).clearData();
             Navigator.pop(context);
           }),
       body: Column(
@@ -69,7 +68,7 @@ class _InventoryViewState extends State<InventoryView> {
           ),
           // Loading or Inventory List
           Expanded(
-            child: viewModel.isLoading
+            child: inventoryState.isLoading
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )

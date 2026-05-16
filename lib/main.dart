@@ -36,7 +36,6 @@ import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/batch_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/product_analytics_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/inventory_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -128,12 +127,6 @@ void main() async {
             create: (_) => ProductAnalyticsViewModel(
               productService: locator<IProductService>(),
               analyticsService: locator<IAnalyticsService>(),
-              batchService: locator<IBatchService>(),
-            ),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => InventoryViewModel(
-              productService: locator<IProductService>(),
               batchService: locator<IBatchService>(),
             ),
           ),
