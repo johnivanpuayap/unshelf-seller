@@ -74,6 +74,23 @@ final batchServiceProvider = Provider<IBatchService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BatchServiceRef = ProviderRef<IBatchService>;
+String _$bundleServiceHash() => r'ff4df4ed11fab9b29fd099ce71b9c53756fc7418';
+
+/// See also [bundleService].
+@ProviderFor(bundleService)
+final bundleServiceProvider = Provider<IBundleService>.internal(
+  bundleService,
+  name: r'bundleServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$bundleServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef BundleServiceRef = ProviderRef<IBundleService>;
 String _$orderServiceHash() => r'7a6b485e3eda0f807df1031a8e19c192437cd3b6';
 
 /// See also [orderService].

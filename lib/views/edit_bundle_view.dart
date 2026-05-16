@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 import 'package:flutter/services.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
@@ -8,68 +8,69 @@ import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/image_delete.dart';
 
-class EditBundleView extends StatefulWidget {
+class EditBundleView extends ConsumerStatefulWidget {
   final String bundleId;
 
-  EditBundleView({required this.bundleId});
+  const EditBundleView({super.key, required this.bundleId});
 
   @override
-  State<EditBundleView> createState() => _EditBundleViewState();
+  ConsumerState<EditBundleView> createState() => _EditBundleViewState();
 }
 
-class _EditBundleViewState extends State<EditBundleView> {
+class _EditBundleViewState extends ConsumerState<EditBundleView> {
   final Map<String, Map<String, dynamic>> productDetails = {};
-  late BundleViewModel viewModel;
 
   @override
   void initState() {
     super.initState();
 
-    viewModel = Provider.of<BundleViewModel>(context, listen: false);
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await viewModel.initializeBundle(widget.bundleId);
+      await ref
+          .read(bundleViewModelProvider.notifier)
+          .initializeBundle(widget.bundleId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(bundleViewModelProvider);
+    final notifier = ref.read(bundleViewModelProvider.notifier);
+
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Edit Bundle Details',
           onBackPressed: () {
-            Provider.of<BundleViewModel>(context, listen: false)
-                .clearSelection();
+            notifier.clearSelection();
             Navigator.pop(context);
           }),
-      body: Consumer<BundleViewModel>(
-        builder: (context, viewModel, child) {
+      body: Builder(
+        builder: (context) {
           final theme = Theme.of(context);
-          return viewModel.isLoading
+          return state.isLoading
               ? const Center(
                   child: CircularProgressIndicator(),
                 )
               : Padding(
                   padding: const EdgeInsets.all(AppTheme.spacing16),
                   child: Form(
-                    key: viewModel.formKey,
+                    key: notifier.formKey,
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
                           // Image Section
                           GestureDetector(
-                            onTap: () => viewModel.pickImage(),
+                            onTap: () => notifier.pickImage(),
                             child: Container(
                               width: double.infinity,
                               height: 300,
                               color: AppColors.darkColor,
-                              child: viewModel.mainImageData != null
+                              child: state.mainImageData != null
                                   ? ImageWithDelete(
-                                      imageData: viewModel.mainImageData!,
-                                      onDelete: viewModel.deleteImage,
+                                      imageData: state.mainImageData!,
+                                      onDelete: notifier.deleteImage,
                                       width: 400.0,
                                       height: 400.0,
-                                      margin: EdgeInsets.all(0),
+                                      margin: const EdgeInsets.all(0),
                                     )
                                   : Center(
                                       child: Column(
@@ -99,7 +100,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
-                            controller: viewModel.bundleNameController,
+                            controller: notifier.bundleNameController,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: AppColors.surface,
@@ -135,7 +136,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
-                            controller: viewModel.bundleDescriptionController,
+                            controller: notifier.bundleDescriptionController,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: AppColors.surface,
@@ -172,10 +173,11 @@ class _EditBundleViewState extends State<EditBundleView> {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           DropdownButtonFormField<String>(
-                            initialValue: viewModel.selectedCategory.isEmpty
+                            initialValue: state.selectedCategory.isEmpty
                                 ? null
-                                : viewModel.selectedCategory,
-                            items: viewModel.categories.map((String category) {
+                                : state.selectedCategory,
+                            items:
+                                notifier.categories.map((String category) {
                               return DropdownMenuItem<String>(
                                 value: category,
                                 child: Text(category),
@@ -195,7 +197,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                               labelStyle: theme.textTheme.bodyMedium,
                             ),
                             onChanged: (String? newValue) {
-                              viewModel.selectedCategory = newValue!;
+                              notifier.selectedCategory = newValue!;
                             },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -218,7 +220,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
-                            controller: viewModel.bundlePriceController,
+                            controller: notifier.bundlePriceController,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: AppColors.surface,
@@ -232,8 +234,9 @@ class _EditBundleViewState extends State<EditBundleView> {
                                   horizontal: AppTheme.spacing12),
                               labelStyle: theme.textTheme.bodyMedium,
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                                    decimal: true),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                   RegExp(r'^\d*\.?\d*$'))
@@ -261,7 +264,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
-                            controller: viewModel.bundleStockController,
+                            controller: notifier.bundleStockController,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: AppColors.surface,
@@ -301,7 +304,7 @@ class _EditBundleViewState extends State<EditBundleView> {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           TextFormField(
-                            controller: viewModel.bundleDiscountController,
+                            controller: notifier.bundleDiscountController,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               filled: true,
@@ -323,11 +326,12 @@ class _EditBundleViewState extends State<EditBundleView> {
                           CustomButton(
                             text: 'Update Bundle',
                             onPressed: () async {
-                              if (viewModel.formKey.currentState?.validate() ??
+                              if (notifier.formKey.currentState
+                                      ?.validate() ??
                                   false) {
-                                await viewModel.updateBundle();
-                                viewModel.clearSelection();
-                                Navigator.pop(context);
+                                await notifier.updateBundle();
+                                notifier.clearSelection();
+                                if (context.mounted) Navigator.pop(context);
                               }
                             },
                           ),

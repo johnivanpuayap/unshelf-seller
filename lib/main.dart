@@ -25,7 +25,6 @@ import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/listing_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
@@ -72,12 +71,6 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => RestockViewModel(
               productService: locator<IProductService>(),
-            ),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => BundleViewModel(
-              bundleService: locator<IBundleService>(),
-              batchService: locator<IBatchService>(),
             ),
           ),
           ChangeNotifierProvider(create: (_) => SettingsViewModel()),
