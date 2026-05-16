@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/order_card.dart';
@@ -12,7 +11,6 @@ import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/dashboard_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
-// Provider import retained for StoreViewModel access (not yet migrated).
 import 'package:unshelf_seller/views/add_product_view.dart';
 import 'package:unshelf_seller/views/inventory_view.dart';
 import 'package:unshelf_seller/views/order_details_view.dart';
@@ -33,7 +31,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(dashboardViewModelProvider.notifier).fetchDashboardData();
       ref.read(orderViewModelProvider.notifier).fetchOrders();
-      Provider.of<StoreViewModel>(context, listen: false).fetchStoreDetails();
+      ref.read(storeViewModelProvider.notifier).fetchStoreDetails();
     });
   }
 
@@ -42,7 +40,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final theme = Theme.of(context);
     final dashboardState = ref.watch(dashboardViewModelProvider);
     final orderState = ref.watch(orderViewModelProvider);
-    final storeVM = context.watch<StoreViewModel>();
+    final storeVM = ref.watch(storeViewModelProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -87,7 +85,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   // ─── Welcome greeting ───
-  Widget _buildWelcomeSection(ThemeData theme, StoreViewModel storeVM) {
+  Widget _buildWelcomeSection(ThemeData theme, StoreState storeVM) {
     final storeName = storeVM.storeDetails?.storeName ?? 'Seller';
     final greeting = _getGreeting();
     final today = DateFormat('EEEE, MMMM d').format(DateTime.now());

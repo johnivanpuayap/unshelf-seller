@@ -16,7 +16,6 @@ import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/authentication/views/reset_password_view.dart';
-import 'package:unshelf_seller/viewmodels/store_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 
@@ -42,11 +41,6 @@ void main() async {
     ProviderScope(
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(
-            create: (_) => StoreViewModel(
-              storeService: locator<IStoreService>(),
-            ),
-          ),
           ChangeNotifierProvider(
             create: (_) => StoreLocationViewModel(
               storeService: locator<IStoreService>(),

@@ -124,5 +124,39 @@ final walletServiceProvider = Provider<IWalletService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef WalletServiceRef = ProviderRef<IWalletService>;
+String _$storeServiceHash() => r'3b00ed1f8c1b9935ac11e770cdf1b59ace7c30a5';
+
+/// See also [storeService].
+@ProviderFor(storeService)
+final storeServiceProvider = Provider<IStoreService>.internal(
+  storeService,
+  name: r'storeServiceProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$storeServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef StoreServiceRef = ProviderRef<IStoreService>;
+String _$userProfileServiceHash() =>
+    r'17121264f808e563b645ea0395ccfe3cde879b9f';
+
+/// See also [userProfileService].
+@ProviderFor(userProfileService)
+final userProfileServiceProvider = Provider<IUserProfileService>.internal(
+  userProfileService,
+  name: r'userProfileServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$userProfileServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef UserProfileServiceRef = ProviderRef<IUserProfileService>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

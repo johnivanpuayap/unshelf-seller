@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ViewModels
@@ -26,27 +26,27 @@ import 'package:unshelf_seller/components/section_header.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 
-class StoreView extends StatefulWidget {
+class StoreView extends ConsumerStatefulWidget {
   const StoreView({super.key});
 
   @override
-  State<StoreView> createState() => _StoreViewState();
+  ConsumerState<StoreView> createState() => _StoreViewState();
 }
 
-class _StoreViewState extends State<StoreView> {
+class _StoreViewState extends ConsumerState<StoreView> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel = Provider.of<StoreViewModel>(context, listen: false);
-      viewModel.fetchStoreDetails();
-      viewModel.fetchUserProfile();
+      final notifier = ref.read(storeViewModelProvider.notifier);
+      notifier.fetchStoreDetails();
+      notifier.fetchUserProfile();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<StoreViewModel>(context);
+    final viewModel = ref.watch(storeViewModelProvider);
 
     if (viewModel.isLoading ||
         viewModel.storeDetails == null ||
@@ -97,7 +97,7 @@ class _StoreViewState extends State<StoreView> {
     );
   }
 
-  Widget _buildStoreHeader(BuildContext context, StoreViewModel viewModel) {
+  Widget _buildStoreHeader(BuildContext context, StoreState viewModel) {
     final theme = Theme.of(context);
     final store = viewModel.storeDetails!;
 
@@ -154,7 +154,7 @@ class _StoreViewState extends State<StoreView> {
                         ),
                         const SizedBox(width: AppTheme.spacing8),
                         Text(
-                          '\u2022',
+                          '•',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -197,7 +197,7 @@ class _StoreViewState extends State<StoreView> {
     );
   }
 
-  Widget _buildManagementCard(BuildContext context, StoreViewModel viewModel) {
+  Widget _buildManagementCard(BuildContext context, StoreState viewModel) {
     final theme = Theme.of(context);
 
     return Card(
@@ -268,7 +268,7 @@ class _StoreViewState extends State<StoreView> {
     );
   }
 
-  Widget _buildAccountCard(BuildContext context, StoreViewModel viewModel) {
+  Widget _buildAccountCard(BuildContext context, StoreState viewModel) {
     final theme = Theme.of(context);
 
     return Card(

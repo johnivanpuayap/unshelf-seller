@@ -20,6 +20,8 @@ import 'package:unshelf_seller/core/interfaces/i_bundle_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_order_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
+import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
+import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_wallet_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 
@@ -48,3 +50,10 @@ IOrderService orderService(OrderServiceRef ref) => locator<IOrderService>();
 
 @Riverpod(keepAlive: true)
 IWalletService walletService(WalletServiceRef ref) => locator<IWalletService>();
+
+@Riverpod(keepAlive: true)
+IStoreService storeService(StoreServiceRef ref) => locator<IStoreService>();
+
+@Riverpod(keepAlive: true)
+IUserProfileService userProfileService(UserProfileServiceRef ref) =>
+    locator<IUserProfileService>();
