@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:unshelf_seller/authentication/views/login_view.dart';
+import 'package:unshelf_seller/core/interfaces/i_auth_service.dart';
+import 'package:unshelf_seller/core/service_locator.dart';
 
 class ResetEmailSentView extends StatefulWidget {
   const ResetEmailSentView({super.key, required this.email});
@@ -16,6 +17,7 @@ class ResetEmailSentView extends StatefulWidget {
 class _ResetEmailSentViewState extends State<ResetEmailSentView> {
   Timer? _cooldownTimer;
   int _cooldownSeconds = 0;
+  bool _resending = false;
 
   @override
   void dispose() {
@@ -24,13 +26,18 @@ class _ResetEmailSentViewState extends State<ResetEmailSentView> {
   }
 
   Future<void> _resend() async {
-    if (_cooldownSeconds > 0) return;
+    if (_cooldownSeconds > 0 || _resending) return;
+    setState(() => _resending = true);
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: widget.email);
+      await locator<IAuthService>().sendPasswordResetEmail(widget.email);
+      if (!mounted) return;
       _snack('Reset link sent.');
       _startCooldown();
     } catch (_) {
+      if (!mounted) return;
       _snack('Could not resend. Try again in a moment.');
+    } finally {
+      if (mounted) setState(() => _resending = false);
     }
   }
 
@@ -128,13 +135,15 @@ class _ResetEmailSentViewState extends State<ResetEmailSentView> {
                         ),
                       ),
                       TextButton(
-                        onPressed: _cooldownSeconds > 0 ? null : _resend,
+                        onPressed: (_resending || _cooldownSeconds > 0)
+                            ? null
+                            : _resend,
                         child: Text(
                           _cooldownSeconds > 0
                               ? 'resend (${_cooldownSeconds}s)'
                               : 'resend',
                           style: tt.labelLarge?.copyWith(
-                            color: _cooldownSeconds > 0
+                            color: (_resending || _cooldownSeconds > 0)
                                 ? cs.onSurface.withValues(alpha: 0.4)
                                 : cs.primary,
                           ),

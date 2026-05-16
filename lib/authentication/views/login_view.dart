@@ -47,41 +47,22 @@ class _LoginViewState extends State<LoginView> {
         password: _passwordController.text,
       );
 
-      final userDoc = await locator<IUserProfileService>()
-          .getUserDocument(userCredential.user!.uid);
-
-      if (userDoc != null) {
-        bool banned = userDoc['isBanned'] as bool;
-        if (banned == true) {
-          await FirebaseAuth.instance.signOut();
-          _snack('Your account is banned. Please contact support.');
-          return;
-        }
-
-        bool isApproved = userDoc['isApproved'] as bool;
-        if (isApproved == false) {
-          await FirebaseAuth.instance.signOut();
-          _snack(
-              'Your account is pending approval. You will be notified once approved.');
-          return;
-        }
-
-        String role = userDoc['type'] as String;
-        if (role == 'seller') {
-          _snack('Signed in');
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeView()),
-          );
-        } else {
-          await FirebaseAuth.instance.signOut();
-          _snack('User has a different role');
-        }
-      } else {
+      final user = userCredential.user;
+      if (user == null) {
         await FirebaseAuth.instance.signOut();
-        _snack('Account not found. Check your email or sign up first.');
+        _snack('Sign in failed. Please try again.');
+        return;
       }
+
+      final passed = await _gateUser(user);
+      if (!passed) return;
+
+      _snack('Signed in');
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeView()),
+      );
     } on FirebaseAuthException catch (e) {
       final msg = switch (e.code) {
         'user-not-found' => 'No user found for that email.',
@@ -114,7 +95,18 @@ class _LoginViewState extends State<LoginView> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final user = userCredential.user;
+      if (user == null) {
+        await FirebaseAuth.instance.signOut();
+        _snack('Google sign-in failed. Please try again.');
+        return;
+      }
+
+      final passed = await _gateUser(user);
+      if (!passed) return;
 
       _snack('Signed in');
       if (!mounted) return;
@@ -127,6 +119,44 @@ class _LoginViewState extends State<LoginView> {
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  /// Returns true if the user passes all seller-side gates (account exists,
+  /// not banned, approved, role is seller); otherwise signs the user out,
+  /// shows the appropriate snack, and returns false.
+  Future<bool> _gateUser(User user) async {
+    final userDoc =
+        await locator<IUserProfileService>().getUserDocument(user.uid);
+
+    if (userDoc == null) {
+      await FirebaseAuth.instance.signOut();
+      _snack('Account not found. Check your email or sign up first.');
+      return false;
+    }
+
+    final banned = userDoc['isBanned'] as bool? ?? false;
+    if (banned) {
+      await FirebaseAuth.instance.signOut();
+      _snack('Your account is banned. Please contact support.');
+      return false;
+    }
+
+    final isApproved = userDoc['isApproved'] as bool? ?? false;
+    if (!isApproved) {
+      await FirebaseAuth.instance.signOut();
+      _snack(
+          'Your account is pending approval. You will be notified once approved.');
+      return false;
+    }
+
+    final role = userDoc['type'] as String? ?? '';
+    if (role != 'seller') {
+      await FirebaseAuth.instance.signOut();
+      _snack('User has a different role');
+      return false;
+    }
+
+    return true;
   }
 
   @override

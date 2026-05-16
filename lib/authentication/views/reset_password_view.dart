@@ -55,7 +55,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
           'This reset link is invalid or has already been used.',
         'weak-password' =>
           'Password is too weak. Please choose a stronger password.',
-        _ => e.message ?? 'Password reset failed. Please try again.',
+        _ => 'Password reset failed. Please try again.',
       };
       _snack(message);
     } catch (e) {

@@ -148,6 +148,7 @@ class _RegisterViewState extends State<RegisterView> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
+                    // Subtitle (seller delta — buyer copy is "Start rescuing near-expiry food near you.")
                     Text(
                       'Turn your unsold stock into revenue.',
                       style: tt.bodyLarge?.copyWith(
