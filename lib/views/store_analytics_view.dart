@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/analytics_viewmodel.dart';
 import 'package:unshelf_seller/components/chart.dart';
 
-class StoreAnalyticsView extends StatefulWidget {
+class StoreAnalyticsView extends ConsumerStatefulWidget {
   const StoreAnalyticsView({super.key});
 
   @override
-  State<StoreAnalyticsView> createState() => _StoreAnalyticsViewState();
+  ConsumerState<StoreAnalyticsView> createState() => _StoreAnalyticsViewState();
 }
 
-class _StoreAnalyticsViewState extends State<StoreAnalyticsView> {
+class _StoreAnalyticsViewState extends ConsumerState<StoreAnalyticsView> {
   String selectedSalesValue = 'Daily';
   String selectedOrdersValue = 'Daily';
 
@@ -21,24 +21,24 @@ class _StoreAnalyticsViewState extends State<StoreAnalyticsView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final analyticsViewModel =
-          Provider.of<AnalyticsViewModel>(context, listen: false);
-
-      analyticsViewModel.fetchAnalyticsData();
+      ref
+          .read(analyticsViewModelProvider.notifier)
+          .fetchAnalyticsData();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final analyticsViewModel = ref.watch(analyticsViewModelProvider);
 
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Store Analytics',
         onBackPressed: () => Navigator.pop(context),
       ),
-      body: Consumer<AnalyticsViewModel>(
-        builder: (context, analyticsViewModel, _) {
+      body: Builder(
+        builder: (context) {
           return analyticsViewModel.isLoading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(

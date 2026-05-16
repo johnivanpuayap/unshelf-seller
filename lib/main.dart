@@ -13,7 +13,6 @@ import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/theme.dart';
-import 'package:unshelf_seller/viewmodels/analytics_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
@@ -65,7 +64,6 @@ void main() async {
           ChangeNotifierProvider(create: (_) => SettingsViewModel()),
           ChangeNotifierProvider(
               create: (_) => UserProfileViewModel(userProfile: null)),
-          ChangeNotifierProvider(create: (_) => AnalyticsViewModel()),
           ChangeNotifierProvider(
             create: (_) => NotificationViewModel(
               notificationService: locator<INotificationService>(),
