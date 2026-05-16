@@ -73,4 +73,45 @@ class FirebaseStoresRepository implements StoresRepository {
       SetOptions(merge: true),
     );
   }
+
+  // Mirrors `StoreService.fetchStoreRatings`: reads
+  // `stores/{storeId}/ratings/average` and returns the `average` field as a
+  // double (defaults to 0.0 when missing or malformed).
+  @override
+  Future<double> fetchAverageRating(String storeId) async {
+    final snap = await _firestore
+        .collection(FirestoreConstants.stores)
+        .doc(storeId)
+        .collection('ratings')
+        .doc('average')
+        .get();
+    final rawData = snap.data();
+    final Map<String, dynamic>? data =
+        rawData != null ? Map<String, dynamic>.from(rawData as Map) : null;
+    return (data?['average'] ?? 0.0).toDouble();
+  }
+
+  // Mirrors `StoreService.updateStoreProfile` and
+  // `StoreService.saveStoreSchedule`: applies a partial field map to
+  // `stores/{storeId}`. Uses `.update` (not `.set`) to preserve the original
+  // semantics — the call fails if the document does not exist.
+  @override
+  Future<void> updateStoreFields(
+      String storeId, Map<String, dynamic> fields) {
+    return _firestore
+        .collection(FirestoreConstants.stores)
+        .doc(storeId)
+        .update(fields);
+  }
+
+  // Mirrors `StoreService.createStore`: full-document `.set()` write that
+  // creates or replaces `stores/{storeId}`.
+  @override
+  Future<void> createStoreDocument(
+      String storeId, Map<String, dynamic> data) {
+    return _firestore
+        .collection(FirestoreConstants.stores)
+        .doc(storeId)
+        .set(data);
+  }
 }
