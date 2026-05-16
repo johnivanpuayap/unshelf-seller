@@ -1,18 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/store_model.dart';
 
-class StoreScheduleViewModel extends BaseViewModel {
-  final IStoreService _storeService;
-  final DateFormat _timeFormatter = DateFormat('hh:mm a');
-  late Map<String, Map<String, dynamic>> _storeSchedule;
+part 'store_schedule_viewmodel.g.dart';
 
-  StoreScheduleViewModel(StoreModel storeDetails,
-      {required IStoreService storeService})
-      : _storeService = storeService {
+/// Immutable state for the Edit Store Schedule screen.
+///
+/// `storeSchedule` is a nested map keyed by day-of-week — its inner maps
+/// are mutated in-place by `selectTime`/`toggleDay` for parity with the
+/// original ChangeNotifier, then a new state is emitted via `copyWith` to
+/// trigger watchers.
+class StoreScheduleState {
+  final bool isLoading;
+  final String? errorMessage;
+  final Map<String, Map<String, dynamic>> storeSchedule;
+
+  const StoreScheduleState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.storeSchedule,
+  });
+
+  factory StoreScheduleState.initial() => const StoreScheduleState(
+        isLoading: false,
+        errorMessage: null,
+        storeSchedule: <String, Map<String, dynamic>>{},
+      );
+
+  StoreScheduleState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    Map<String, Map<String, dynamic>>? storeSchedule,
+  }) {
+    return StoreScheduleState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      storeSchedule: storeSchedule ?? this.storeSchedule,
+    );
+  }
+
+  static const _sentinel = Object();
+}
+
+/// Store schedule ViewModel — backs the Edit Store Schedule screen. The view
+/// calls [loadFromStore] in `initState` to seed the per-day schedule map from
+/// the supplied `StoreModel` (mirrors original constructor-time init).
+@riverpod
+class StoreScheduleViewModel extends _$StoreScheduleViewModel {
+  final DateFormat _timeFormatter = DateFormat('hh:mm a');
+
+  @override
+  StoreScheduleState build() => StoreScheduleState.initial();
+
+  /// Seeds the schedule map from the supplied store model. Mirrors the
+  /// original ChangeNotifier constructor: normalizes 'Closed' to '' and
+  /// fills in missing `isOpen` flags before re-ordering by Mon..Sun.
+  void loadFromStore(StoreModel storeDetails) {
     AppLogger.debug('Store schedule: ${storeDetails.storeSchedule}');
 
     for (var entry in storeDetails.storeSchedule!.entries) {
@@ -34,7 +83,7 @@ class StoreScheduleViewModel extends BaseViewModel {
       }
     });
 
-    final List<String> orderedDays = [
+    const List<String> orderedDays = [
       'Monday',
       'Tuesday',
       'Wednesday',
@@ -44,39 +93,40 @@ class StoreScheduleViewModel extends BaseViewModel {
       'Sunday',
     ];
 
-    _storeSchedule = Map.fromEntries(
+    final schedule = Map<String, Map<String, dynamic>>.fromEntries(
       orderedDays.map((day) {
         // Check if the storeSchedule has data for the day, otherwise default
-        var schedule = storeDetails.storeSchedule?[day] ??
+        var entry = storeDetails.storeSchedule?[day] ??
             {'isOpen': false, 'open': '', 'close': ''};
 
         // Ensure 'isOpen' is a boolean and 'open' and 'close' are strings
         return MapEntry(
           day,
           {
-            'isOpen': schedule['isOpen'],
-            'open': schedule['open'],
-            'close': schedule['close'],
+            'isOpen': entry['isOpen'],
+            'open': entry['open'],
+            'close': entry['close'],
           },
         );
       }),
     );
-  }
 
-  Map<String, Map<String, dynamic>> get storeSchedule => _storeSchedule;
+    state = state.copyWith(storeSchedule: schedule);
+  }
 
   Future<void> selectTime(String day, String type, TimeOfDay pickedTime) async {
     final timeString = _timeFormatter.format(
       DateTime(2023, 1, 1, pickedTime.hour, pickedTime.minute),
     );
-    _storeSchedule[day]![type] = timeString;
-    notifyListeners();
+    // Preserve in-place mutation, then emit new state to trigger watchers.
+    state.storeSchedule[day]![type] = timeString;
+    state = state.copyWith(storeSchedule: state.storeSchedule);
   }
 
   Future<void> toggleDay(String day) async {
-    _storeSchedule[day]!['isOpen'] = !(_storeSchedule[day]!['isOpen']);
-
-    notifyListeners();
+    state.storeSchedule[day]!['isOpen'] =
+        !(state.storeSchedule[day]!['isOpen']);
+    state = state.copyWith(storeSchedule: state.storeSchedule);
   }
 
   Future<bool> saveProfile(BuildContext context, String userId) async {
@@ -93,14 +143,20 @@ class StoreScheduleViewModel extends BaseViewModel {
     AppLogger.debug('Passed validation');
 
     try {
-      await _storeService.saveStoreSchedule(userId, _storeSchedule);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile saved successfully')),
-      );
+      await ref
+          .read(storeServiceProvider)
+          .saveStoreSchedule(userId, state.storeSchedule);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile saved successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save profile: $e')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
+      }
     }
 
     return true;
@@ -108,7 +164,7 @@ class StoreScheduleViewModel extends BaseViewModel {
 
   /// Validation Method
   bool _validateSchedule() {
-    for (var entry in _storeSchedule.entries) {
+    for (var entry in state.storeSchedule.entries) {
       final isOpen = entry.value['isOpen'];
       final openTime = entry.value['open']?.trim();
       final closeTime = entry.value['close']?.trim();
