@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'package:unshelf_seller/core/constants/status_constants.dart';
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
 
-/// A compact, pill-shaped badge that renders order/product statuses using
-/// semantic colors from [AppColors].
+/// A compact, pill-shaped badge that renders order, payment, and product
+/// statuses using the Leaf & Honey palette via `Theme.of(context).colorScheme`.
+///
+/// The brand kit does not define explicit status tones, so this widget maps
+/// the existing string statuses to semantic colorScheme roles:
+///
+/// - Pending / Processing → tertiary
+/// - Ready / Completed / Paid → primary
+/// - Cancelled / Unpaid → error
+/// - Low stock / Out of stock → error
 class StatusBadge extends StatelessWidget {
   final String status;
 
@@ -13,74 +19,69 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _resolveColors(status);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final palette = _palette(status, cs);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing12,
-        vertical: AppTheme.spacing4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: colors.background,
-        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+        color: palette.background,
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        status,
-        style: TextStyle(
-          fontSize: 12,
+        palette.label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: palette.foreground,
           fontWeight: FontWeight.w600,
-          color: colors.foreground,
-          height: 1,
+          height: 1.1,
         ),
       ),
     );
   }
 
-  _StatusColors _resolveColors(String status) {
+  _StatusPalette _palette(String status, ColorScheme cs) {
     switch (status) {
       case StatusConstants.processing:
-        return const _StatusColors(
-          background: AppColors.statusProcessing,
-          foreground: AppColors.statusProcessingText,
+        return _StatusPalette(
+          background: cs.tertiary.withValues(alpha: 0.15),
+          foreground: cs.tertiary,
+          label: status,
         );
       case StatusConstants.ready:
-        return const _StatusColors(
-          background: AppColors.statusReady,
-          foreground: AppColors.statusReadyText,
-        );
       case StatusConstants.completed:
-        return const _StatusColors(
-          background: AppColors.statusCompleted,
-          foreground: AppColors.statusCompletedText,
+      case StatusConstants.paid:
+        return _StatusPalette(
+          background: cs.primary.withValues(alpha: 0.14),
+          foreground: cs.primary,
+          label: status,
         );
       case StatusConstants.cancelled:
-        return const _StatusColors(
-          background: AppColors.statusCancelled,
-          foreground: AppColors.statusCancelledText,
-        );
-      case StatusConstants.paid:
-        return const _StatusColors(
-          background: AppColors.statusPaid,
-          foreground: AppColors.statusPaidText,
-        );
       case StatusConstants.unpaid:
-        return const _StatusColors(
-          background: AppColors.statusUnpaid,
-          foreground: AppColors.statusUnpaidText,
+        return _StatusPalette(
+          background: cs.error.withValues(alpha: 0.15),
+          foreground: cs.error,
+          label: status,
         );
       case StatusConstants.pending:
       default:
-        return const _StatusColors(
-          background: AppColors.statusPending,
-          foreground: AppColors.statusPendingText,
+        return _StatusPalette(
+          background: cs.tertiary.withValues(alpha: 0.15),
+          foreground: cs.tertiary,
+          label: status,
         );
     }
   }
 }
 
-class _StatusColors {
+class _StatusPalette {
   final Color background;
   final Color foreground;
+  final String label;
 
-  const _StatusColors({required this.background, required this.foreground});
+  const _StatusPalette({
+    required this.background,
+    required this.foreground,
+    required this.label,
+  });
 }

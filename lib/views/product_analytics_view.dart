@@ -1,12 +1,23 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
 import 'package:unshelf_seller/components/chart.dart';
-import 'package:unshelf_seller/components/custom_app_bar.dart';
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
+import 'package:unshelf_seller/components/section_header.dart';
+import 'package:unshelf_seller/components/stat_card.dart';
 import 'package:unshelf_seller/viewmodels/product_analytics_viewmodel.dart';
 
+/// Product analytics screen.
+///
+/// Layout: AppBar + product picker + time-range chips + KPI row +
+/// sales-overview section with the rethemed [Chart] component.
+///
+/// NOTE: the underlying viewmodel does not expose per-product time-series
+/// data yet, so this screen still seeds its own mock dataset on init
+/// (mirroring the pre-redesign implementation). The visual chrome is
+/// what's being upgraded here; data wiring is out of scope for Phase 4.
 class ProductAnalyticsView extends ConsumerStatefulWidget {
   const ProductAnalyticsView({super.key});
 
@@ -15,343 +26,397 @@ class ProductAnalyticsView extends ConsumerStatefulWidget {
       _ProductAnalyticsViewState();
 }
 
-class _ProductAnalyticsViewState extends ConsumerState<ProductAnalyticsView> {
-  String selectedSalesValue = 'Daily';
-  String selectedOrdersValue = 'Daily';
-  String selectedProduct = 'Apples';
-  Map<String, Map<String, dynamic>> data = {};
+enum _TimeRange { week, month, quarter, year }
 
-  DateTime today = DateTime.now();
+class _ProductAnalyticsViewState extends ConsumerState<ProductAnalyticsView> {
+  String _selectedProduct = 'Apples';
+  _TimeRange _range = _TimeRange.week;
+  Map<String, Map<String, dynamic>> _data = {};
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(productAnalyticsViewModelProvider.notifier)
           .fetchProductAnalytics();
     });
+    _data = _seedMockData();
+  }
 
-    DateTime today = DateTime.now();
+  Map<String, Map<String, dynamic>> _seedMockData() {
+    final today = DateTime.now();
+    List<DateTime> range(int count, Duration step) =>
+        List.generate(count, (i) => today.subtract(step * i));
 
-    List<DateTime> generateDateRange(int days) {
-      return List.generate(days, (index) {
-        return today.subtract(Duration(days: index));
-      });
+    Map<DateTime, double> series(int count, Duration step, double scale) {
+      final rng = Random(42);
+      return {
+        for (final d in range(count, step)) d: rng.nextDouble() * scale,
+      };
     }
 
-    List<DateTime> generateWeekRange(int weeks) {
-      return List.generate(weeks, (index) {
-        return today.subtract(Duration(days: (index * 7)));
-      });
-    }
-
-    List<DateTime> generateMonthRange(int months) {
-      return List.generate(months, (index) {
-        return DateTime(today.year, today.month - index, today.day);
-      });
-    }
-
-    List<DateTime> generateYearRange(int years) {
-      return List.generate(years, (index) {
-        return DateTime(today.year - index, today.month, today.day);
-      });
-    }
-
-    data = {
+    return {
       'Apples': {
         'totalOrders': 200,
         'totalSales': 36000.0,
-        'totalCancelledOrders': 20,
-        'totalCompletedOrders': 180,
-        'dailySalesMap': generateDateRange(14).asMap().map((index, date) {
-          double dailySales = Random().nextDouble() * 100.0;
-          return MapEntry(date, dailySales);
-        }),
-        'weeklySalesMap': generateWeekRange(4).asMap().map((index, date) {
-          double weeklySales = Random().nextDouble() * 500.0;
-          return MapEntry(date, weeklySales);
-        }),
-        'monthlySalesMap': generateMonthRange(6).asMap().map((index, date) {
-          double monthlySales = Random().nextDouble() * 1000.0;
-          return MapEntry(date, monthlySales);
-        }),
-        'annualSalesMap': generateYearRange(3).asMap().map((index, date) {
-          double annualSales = Random().nextDouble() * 10000.0;
-          return MapEntry(date, annualSales);
-        }),
+        'completed': 180,
+        'cancelled': 20,
+        'weekSales': series(14, const Duration(days: 1), 100),
+        'monthSales': series(4, const Duration(days: 7), 500),
+        'quarterSales': series(6, const Duration(days: 30), 1000),
+        'yearSales': series(3, const Duration(days: 365), 10000),
       },
       'Watermelon': {
         'totalOrders': 50,
         'totalSales': 12250.0,
-        'totalCompletedOrders': 49,
-        'totalCancelledOrders': 1,
-        'dailySalesMap': generateDateRange(14).asMap().map((index, date) {
-          double dailySales = Random().nextDouble() * 200.0;
-          return MapEntry(date, dailySales);
-        }),
-        'weeklySalesMap': generateWeekRange(4).asMap().map((index, date) {
-          double weeklySales = Random().nextDouble() * 1000.0;
-          return MapEntry(date, weeklySales);
-        }),
-        'monthlySalesMap': generateMonthRange(6).asMap().map((index, date) {
-          double monthlySales = Random().nextDouble() * 2000.0;
-          return MapEntry(date, monthlySales);
-        }),
-        'annualSalesMap': generateYearRange(3).asMap().map((index, date) {
-          double annualSales = Random().nextDouble() * 10000.0;
-          return MapEntry(date, annualSales);
-        }),
+        'completed': 49,
+        'cancelled': 1,
+        'weekSales': series(14, const Duration(days: 1), 200),
+        'monthSales': series(4, const Duration(days: 7), 1000),
+        'quarterSales': series(6, const Duration(days: 30), 2000),
+        'yearSales': series(3, const Duration(days: 365), 10000),
       },
       'Purple Grapes': {
         'totalOrders': 100,
         'totalSales': 19000.0,
-        'totalCompletedOrders': 95,
-        'totalCancelledOrders': 5,
-        'dailySalesMap': generateDateRange(14).asMap().map((index, date) {
-          double dailySales = Random().nextDouble() * 100.0;
-          return MapEntry(date, dailySales);
-        }),
-        'weeklySalesMap': generateWeekRange(4).asMap().map((index, date) {
-          double weeklySales = Random().nextDouble() * 500.0;
-          return MapEntry(date, weeklySales);
-        }),
-        'monthlySalesMap': generateMonthRange(6).asMap().map((index, date) {
-          double monthlySales = Random().nextDouble() * 1200.0;
-          return MapEntry(date, monthlySales);
-        }),
-        'annualSalesMap': generateYearRange(3).asMap().map((index, date) {
-          double annualSales = Random().nextDouble() * 2500.0;
-          return MapEntry(date, annualSales);
-        }),
+        'completed': 95,
+        'cancelled': 5,
+        'weekSales': series(14, const Duration(days: 1), 100),
+        'monthSales': series(4, const Duration(days: 7), 500),
+        'quarterSales': series(6, const Duration(days: 30), 1200),
+        'yearSales': series(3, const Duration(days: 365), 2500),
       },
     };
   }
 
-  Map<String, dynamic> get currentProductData {
-    return data[selectedProduct]!;
+  Map<String, dynamic> get _current => _data[_selectedProduct]!;
+
+  Map<DateTime, double> get _currentSeries {
+    switch (_range) {
+      case _TimeRange.week:
+        return _current['weekSales'] as Map<DateTime, double>;
+      case _TimeRange.month:
+        return _current['monthSales'] as Map<DateTime, double>;
+      case _TimeRange.quarter:
+        return _current['quarterSales'] as Map<DateTime, double>;
+      case _TimeRange.year:
+        return _current['yearSales'] as Map<DateTime, double>;
+    }
+  }
+
+  double get _maxX {
+    switch (_range) {
+      case _TimeRange.week:
+        return 14;
+      case _TimeRange.month:
+        return 4;
+      case _TimeRange.quarter:
+        return 6;
+      case _TimeRange.year:
+        return 3;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final viewModel = ref.watch(productAnalyticsViewModelProvider);
-    var dataName = data.keys.toList();
+    final cs = theme.colorScheme;
+    final state = ref.watch(productAnalyticsViewModelProvider);
 
     return Scaffold(
-      appBar: CustomAppBar(
-          title: 'Product Analytics',
-          onBackPressed: () {
-            Navigator.pop(context);
-          }),
-      body: viewModel.isLoading
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Product analytics',
+          style: theme.textTheme.titleLarge?.copyWith(color: cs.onSurface),
+        ),
+        centerTitle: false,
+      ),
+      body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Product Dropdown
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.textSecondary.withValues(alpha: 0.2),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+          : SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ProductPicker(
+                      products: _data.keys.toList(),
+                      selected: _selectedProduct,
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedProduct = value);
+                        }
+                      },
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing16,
-                      vertical: AppTheme.spacing8,
+                    const SizedBox(height: 24),
+                    _KpiRow(data: _current),
+                    const SizedBox(height: 32),
+                    const SectionHeader(title: 'Sales overview'),
+                    const SizedBox(height: 8),
+                    _RangeChips(
+                      selected: _range,
+                      onSelected: (next) => setState(() => _range = next),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedProduct,
-                        onChanged: (String? newValue) {
-                          if (newValue != null && newValue != selectedProduct) {
-                            setState(() {
-                              selectedProduct = newValue;
-                            });
-                          }
-                        },
-                        items: dataName
-                            .map<DropdownMenuItem<String>>((var product) {
-                          return DropdownMenuItem<String>(
-                            value: product,
-                            child: Text(
-                              product,
-                              style: theme.textTheme.titleMedium,
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    const SizedBox(height: 16),
+                    _ChartCard(
+                      series: _currentSeries,
+                      maxX: _maxX,
                     ),
-                  ),
-
-                  const SizedBox(height: AppTheme.spacing24),
-
-                  // Lifetime Totals Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppTheme.spacing16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Lifetime Totals',
-                            style: theme.textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: AppTheme.spacing12),
-                          Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Total Orders',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: AppTheme.spacing4),
-                                Text(
-                                  '${currentProductData['totalOrders']}',
-                                  style: theme.textTheme.headlineLarge?.copyWith(
-                                    color: AppColors.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(height: AppTheme.spacing8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    _buildStatColumn(
-                                      context,
-                                      'Completed',
-                                      currentProductData[
-                                          'totalCompletedOrders'],
-                                    ),
-                                    _buildStatColumn(
-                                      context,
-                                      'Cancelled',
-                                      currentProductData[
-                                          'totalCancelledOrders'],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: AppTheme.spacing16),
-                          Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Total Sales',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: AppTheme.spacing4),
-                                Text(
-                                  '\u20B1 ${currentProductData['totalSales'].toStringAsFixed(2)}',
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    color: AppColors.primaryColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppTheme.spacing24),
-
-                  // Sales Overview
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Sales Overview',
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedSalesValue,
-                          items: ['Daily', 'Weekly', 'Monthly', 'Annual']
-                              .map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedSalesValue = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  _buildChart(selectedSalesValue, currentProductData),
-                ],
+                  ],
+                ),
               ),
             ),
     );
   }
 }
 
-// Helper Method for Max Y-Value
-double _getMaxY(Map<DateTime, double> dataMap) {
-  return dataMap.values.isNotEmpty
-      ? dataMap.values.map((e) => e.toDouble()).reduce((a, b) => a > b ? a : b)
-      : 0.0;
-}
+// ────────────────────────────────────────────────────────────────────────────
+// Product picker
+// ────────────────────────────────────────────────────────────────────────────
 
-// Helper Method for Chart
-Widget _buildChart(String selectedValue, Map<String, dynamic> data) {
-  switch (selectedValue) {
-    case 'Daily':
-      return Chart(
-          dataMap: data['dailySalesMap'],
-          maxXValue: 14,
-          maxYValue: _getMaxY(data['dailySalesMap']));
-    case 'Weekly':
-      return Chart(
-          dataMap: data['weeklySalesMap'],
-          maxXValue: 4,
-          maxYValue: _getMaxY(data['weeklySalesMap']));
-    case 'Monthly':
-      return Chart(
-          dataMap: data['monthlySalesMap'],
-          maxXValue: 6,
-          maxYValue: _getMaxY(data['monthlySalesMap']));
-    default:
-      return Chart(
-          dataMap: data['annualSalesMap'],
-          maxXValue: 3,
-          maxYValue: _getMaxY(data['annualSalesMap']));
+class _ProductPicker extends StatelessWidget {
+  const _ProductPicker({
+    required this.products,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final List<String> products;
+  final String selected;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .02),
+            offset: const Offset(0, 1),
+            blurRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF1F2A20).withValues(alpha: .06),
+            offset: const Offset(0, 8),
+            blurRadius: 28,
+          ),
+        ],
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: selected,
+          onChanged: onChanged,
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            color: cs.onSurface.withValues(alpha: 0.55),
+          ),
+          style: theme.textTheme.titleSmall?.copyWith(color: cs.onSurface),
+          items: products
+              .map(
+                (p) => DropdownMenuItem<String>(
+                  value: p,
+                  child: Text(p),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
   }
 }
 
-// Helper Method for Stats
-Widget _buildStatColumn(BuildContext context, String title, int value) {
-  final theme = Theme.of(context);
-  return Column(
-    children: [
-      Text(title, style: theme.textTheme.bodyMedium),
-      const SizedBox(height: AppTheme.spacing4),
-      Text(
-        '$value',
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
+// ────────────────────────────────────────────────────────────────────────────
+// KPI row
+// ────────────────────────────────────────────────────────────────────────────
+
+class _KpiRow extends StatelessWidget {
+  const _KpiRow({required this.data});
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final money = NumberFormat.currency(symbol: '₱', decimalDigits: 0);
+    final totalSales = (data['totalSales'] as num).toDouble();
+    final completed = data['completed'] as int;
+    final cancelled = data['cancelled'] as int;
+    final totalOrders = data['totalOrders'] as int;
+    final repeatRate = totalOrders == 0
+        ? 0
+        : ((completed / totalOrders) * 100).round();
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                label: 'Lifetime sales',
+                value: money.format(totalSales),
+                icon: Icons.account_balance_wallet_outlined,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: StatCard(
+                label: 'Orders',
+                value: totalOrders.toString(),
+                icon: Icons.shopping_bag_outlined,
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                label: 'Completed',
+                value: completed.toString(),
+                icon: Icons.check_circle_outline,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: StatCard(
+                label: 'Cancelled',
+                value: cancelled.toString(),
+                icon: Icons.cancel_outlined,
+                iconColor: cancelled > 0 ? cs.error : null,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                label: 'Fulfilment rate',
+                value: '$repeatRate%',
+                icon: Icons.trending_up_outlined,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Time range chip strip
+// ────────────────────────────────────────────────────────────────────────────
+
+class _RangeChips extends StatelessWidget {
+  const _RangeChips({required this.selected, required this.onSelected});
+
+  final _TimeRange selected;
+  final ValueChanged<_TimeRange> onSelected;
+
+  static const _labels = <_TimeRange, String>{
+    _TimeRange.week: '14 days',
+    _TimeRange.month: '4 weeks',
+    _TimeRange.quarter: '6 months',
+    _TimeRange.year: '3 years',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.zero,
+      child: Row(
+        children: [
+          for (final entry in _labels.entries) ...[
+            ChoiceChip(
+              label: Text(entry.value),
+              selected: selected == entry.key,
+              onSelected: (_) => onSelected(entry.key),
+              showCheckmark: false,
+              selectedColor: cs.primary.withValues(alpha: 0.14),
+              backgroundColor: cs.surfaceContainerHighest,
+              labelStyle: theme.textTheme.labelLarge?.copyWith(
+                color: selected == entry.key
+                    ? cs.primary
+                    : cs.onSurface.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+                side: BorderSide(
+                  color: selected == entry.key
+                      ? cs.primary.withValues(alpha: 0.4)
+                      : cs.onSurface.withValues(alpha: 0.08),
+                ),
+              ),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+            if (entry.key != _labels.keys.last) const SizedBox(width: 8),
+          ],
+        ],
       ),
-    ],
-  );
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Chart card
+// ────────────────────────────────────────────────────────────────────────────
+
+class _ChartCard extends StatelessWidget {
+  const _ChartCard({required this.series, required this.maxX});
+
+  final Map<DateTime, double> series;
+  final double maxX;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final values = series.values;
+    final maxY = values.isEmpty
+        ? 1.0
+        : values.reduce((a, b) => a > b ? a : b).toDouble();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .02),
+            offset: const Offset(0, 1),
+            blurRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF1F2A20).withValues(alpha: .06),
+            offset: const Offset(0, 8),
+            blurRadius: 28,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Chart(
+        dataMap: series,
+        maxXValue: maxX,
+        maxYValue: maxY,
+      ),
+    );
+  }
 }

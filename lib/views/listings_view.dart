@@ -6,8 +6,6 @@ import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/product_card.dart';
 import 'package:unshelf_seller/models/bundle_model.dart';
 import 'package:unshelf_seller/models/product_model.dart';
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/listing_viewmodel.dart';
 import 'package:unshelf_seller/views/add_product_view.dart';
 import 'package:unshelf_seller/views/bundle_details_view.dart';
@@ -16,6 +14,13 @@ import 'package:unshelf_seller/views/edit_product_view.dart';
 import 'package:unshelf_seller/views/product_details_view.dart';
 import 'package:unshelf_seller/views/select_products_view.dart';
 
+/// Seller-side listings catalogue (products + bundles).
+///
+/// Full-width layout (no AppBar — this is a tab body in HomeView):
+/// • Header with title + count + "Add" CTA
+/// • Search field
+/// • Filter chips (All / Products / Bundles)
+/// • Vertical list of [ProductCard] entries
 class ListingsView extends ConsumerStatefulWidget {
   const ListingsView({super.key});
 
@@ -30,8 +35,6 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    // The pre-Riverpod ListingViewModel fetched items from its
-    // constructor; now we trigger it from the view's first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(listingViewModelProvider.notifier).fetchItems();
     });
@@ -53,57 +56,73 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(listingViewModelProvider);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      body: Column(
-        children: [
-          _SearchBar(
-            controller: _searchController,
-            onClear: () {
-              _searchController.clear();
-              _onSearchChanged();
-            },
-          ),
-          const _FilterRow(),
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                if (state.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state.filteredItems.isEmpty) {
-                  return _buildEmptyState(context, state.filter);
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () => ref
-                      .read(listingViewModelProvider.notifier)
-                      .fetchItems(),
-                  color: AppColors.primaryColor,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing16,
-                      vertical: AppTheme.spacing8,
-                    ),
+      body: RefreshIndicator(
+        color: cs.primary,
+        onRefresh: () =>
+            ref.read(listingViewModelProvider.notifier).fetchItems(),
+        child: SafeArea(
+          top: false,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                sliver: SliverToBoxAdapter(
+                  child: _Header(
+                    count: state.filteredItems.length,
+                    onAdd: () => _showAddItemSheet(context),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                sliver: SliverToBoxAdapter(
+                  child: _SearchField(controller: _searchController),
+                ),
+              ),
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(24, 8, 24, 16),
+                sliver: SliverToBoxAdapter(child: _FilterChips()),
+              ),
+              if (state.isLoading && state.items.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (state.errorMessage != null && state.items.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _ListingsError(
+                    message: state.errorMessage!,
+                    onRetry: () => ref
+                        .read(listingViewModelProvider.notifier)
+                        .fetchItems(),
+                  ),
+                )
+              else if (state.filteredItems.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _buildEmptyState(context, state.filter),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                  sliver: SliverList.separated(
                     itemCount: state.filteredItems.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppTheme.spacing8),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = state.filteredItems[index];
                       return _buildProductCard(context, item);
                     },
                   ),
-                );
-              },
-            ),
+                ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddItemSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Item'),
+        ),
       ),
     );
   }
@@ -128,7 +147,7 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
       icon: Icons.storefront_outlined,
       title: title,
       subtitle: subtitle,
-      actionLabel: 'Add Product',
+      actionLabel: 'Add product',
       onAction: () => _showAddItemSheet(context),
     );
   }
@@ -188,22 +207,37 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
     String itemId,
     bool isProduct,
   ) async {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Confirm Deletion'),
-          content: const Text('Are you sure you want to delete this item?'),
+          title: Text(
+            'Delete this listing?',
+            style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface),
+          ),
+          content: Text(
+            "This can't be undone. Buyers will no longer see it on your store.",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cs.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 'Delete',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error),
+                style: theme.textTheme.labelLarge?.copyWith(color: cs.error),
               ),
             ),
           ],
@@ -221,49 +255,40 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
   void _showAddItemSheet(BuildContext context) {
     final notifier = ref.read(listingViewModelProvider.notifier);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusLarge),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        final cs = theme.colorScheme;
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.only(
-              left: AppTheme.spacing24,
-              right: AppTheme.spacing24,
-              bottom: AppTheme.spacing24,
-            ),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Drag handle
                 Center(
                   child: Container(
-                    margin: const EdgeInsets.only(
-                      top: AppTheme.spacing12,
-                      bottom: AppTheme.spacing24,
-                    ),
+                    margin: const EdgeInsets.only(bottom: 16),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusFull),
+                      color: cs.onSurface.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-
                 Text(
                   'What would you like to add?',
-                  style: Theme.of(sheetContext).textTheme.headlineSmall,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: cs.onSurface,
+                  ),
                 ),
-                const SizedBox(height: AppTheme.spacing16),
-
-                // Add Product option
+                const SizedBox(height: 16),
                 _AddOptionTile(
                   icon: Icons.add_circle_outline,
                   title: 'Product',
@@ -281,12 +306,10 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
                     notifier.fetchItems();
                   },
                 ),
-                const SizedBox(height: AppTheme.spacing8),
-
-                // Add Bundle option
+                const SizedBox(height: 8),
                 _AddOptionTile(
                   icon: CupertinoIcons.gift,
-                  title: 'Product Bundle',
+                  title: 'Product bundle',
                   description:
                       'Group multiple products into a discounted pack.',
                   onTap: () async {
@@ -309,123 +332,153 @@ class _ListingsViewState extends ConsumerState<ListingsView> {
   }
 }
 
-// ─── Search Bar ─────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Header
+// ────────────────────────────────────────────────────────────────────────────
 
-class _SearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onClear;
+class _Header extends StatelessWidget {
+  const _Header({required this.count, required this.onAdd});
 
-  const _SearchBar({
-    required this.controller,
-    required this.onClear,
-  });
+  final int count;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing16,
-        vertical: AppTheme.spacing8,
-      ),
-      child: SizedBox(
-        height: AppTheme.minTouchTarget,
-        child: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            return TextField(
-              controller: controller,
-              autofocus: false,
-              decoration: InputDecoration(
-                hintText: 'Search listings...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: value.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: onClear,
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMedium),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMedium),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMedium),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryColor,
-                    width: 2,
-                  ),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Listings',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: cs.onSurface,
                 ),
               ),
-            );
-          },
+              const SizedBox(height: 4),
+              Text(
+                '$count ${count == 1 ? "item" : "items"} on your store',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.65),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 44,
+          child: ElevatedButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Add'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-// ─── Filter Row ─────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Search field
+// ────────────────────────────────────────────────────────────────────────────
 
-class _FilterRow extends ConsumerWidget {
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        return TextField(
+          controller: controller,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: 'Search listings…',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: value.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () => controller.clear(),
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Filter chips
+// ────────────────────────────────────────────────────────────────────────────
+
+class _FilterChips extends ConsumerWidget {
+  const _FilterChips();
+
   static const _filters = ['All', 'Products', 'Bundles'];
-
-  const _FilterRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final state = ref.watch(listingViewModelProvider);
     final notifier = ref.read(listingViewModelProvider.notifier);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing16,
-      ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.zero,
       child: Row(
         children: [
-          Expanded(
-            child: Wrap(
-              spacing: AppTheme.spacing8,
-              children: _filters.map((label) {
-                final selected = state.filter == label;
-                return ChoiceChip(
-                  label: Text(label),
-                  selected: selected,
-                  onSelected: (_) => notifier.setFilter(label),
-                  selectedColor:
-                      AppColors.primaryColor.withValues(alpha: 0.15),
-                  labelStyle: theme.textTheme.labelLarge?.copyWith(
-                    color: selected
-                        ? AppColors.primaryColor
-                        : AppColors.textSecondary,
-                  ),
-                  showCheckmark: false,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                );
-              }).toList(),
+          for (final label in _filters) ...[
+            ChoiceChip(
+              label: Text(label),
+              selected: state.filter == label,
+              onSelected: (_) => notifier.setFilter(label),
+              showCheckmark: false,
+              selectedColor: cs.primary.withValues(alpha: 0.14),
+              backgroundColor: cs.surfaceContainerHighest,
+              labelStyle: theme.textTheme.labelLarge?.copyWith(
+                color: state.filter == label
+                    ? cs.primary
+                    : cs.onSurface.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+                side: BorderSide(
+                  color: state.filter == label
+                      ? cs.primary.withValues(alpha: 0.4)
+                      : cs.onSurface.withValues(alpha: 0.08),
+                ),
+              ),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
             ),
-          ),
-          Text(
-            '(${state.filteredItems.length} '
-            '${state.filteredItems.length == 1 ? 'item' : 'items'})',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
+            if (label != _filters.last) const SizedBox(width: 8),
+          ],
         ],
       ),
     );
   }
 }
 
-// ─── Add Option Tile ────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Add-item bottom-sheet tile
+// ────────────────────────────────────────────────────────────────────────────
 
 class _AddOptionTile extends StatelessWidget {
   final IconData icon;
@@ -443,54 +496,105 @@ class _AddOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing8,
-          vertical: AppTheme.spacing12,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: AppTheme.spacing48,
-              height: AppTheme.spacing48,
-              decoration: BoxDecoration(
-                color: AppColors.lightColor,
-                borderRadius:
-                    BorderRadius.circular(AppTheme.radiusMedium),
-              ),
-              child: Icon(icon, color: AppColors.primaryColor),
-            ),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  child: Icon(icon, color: cs.primary),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: cs.onSurface.withValues(alpha: 0.4),
+                ),
+              ],
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textHint,
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Error
+// ────────────────────────────────────────────────────────────────────────────
+
+class _ListingsError extends StatelessWidget {
+  const _ListingsError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: cs.error),
+          const SizedBox(height: 16),
+          Text(
+            "Couldn't load listings",
+            style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurface.withValues(alpha: 0.55),
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
       ),
     );
   }
