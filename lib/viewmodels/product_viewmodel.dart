@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:unshelf_seller/core/logger.dart';
 import 'package:unshelf_seller/core/providers/services.dart';
+import 'package:unshelf_seller/data/repositories/providers.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 
@@ -200,20 +200,14 @@ class ProductViewModel extends _$ProductViewModel {
     }
   }
 
-  // Upload image and return URL
+  // Upload image and return URL. Routes through StorageRepository so the
+  // viewmodel no longer touches the FirebaseStorage SDK directly.
   Future<String> uploadImage(Uint8List imageData, int? index) async {
-    final Reference imageRef;
-
-    if (index == null) {
-      imageRef = FirebaseStorage.instance.ref().child(
-          'product_images/main_${DateTime.now().millisecondsSinceEpoch}.jpg');
-    } else {
-      imageRef = FirebaseStorage.instance.ref().child(
-          'product_images/additional_${DateTime.now().millisecondsSinceEpoch}_$index.jpg');
-    }
-
-    await imageRef.putData(imageData);
-    return await imageRef.getDownloadURL();
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final path = index == null
+        ? 'product_images/main_$ts.jpg'
+        : 'product_images/additional_${ts}_$index.jpg';
+    return ref.read(storageRepositoryProvider).uploadBytes(path, imageData);
   }
 
   void deleteImage(bool isMainImage, int? index) {
