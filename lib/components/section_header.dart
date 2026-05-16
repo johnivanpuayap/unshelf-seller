@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:unshelf_seller/utils/theme.dart';
-
-/// A section title row with an optional "See all" / action text button on the right.
+/// A section title row with an optional "See all" / action text button.
+///
+/// Title uses `Theme.of(context).textTheme.titleLarge` (DM Serif Display) for
+/// the Soft Editorial editorial feel.
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
@@ -18,23 +19,32 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.spacing8),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+          Flexible(
+            child: Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: cs.onSurface,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (actionLabel != null && onAction != null)
             TextButton(
               onPressed: onAction,
-              child: Text(actionLabel!),
+              child: Text(
+                actionLabel!,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: cs.primary,
+                ),
+              ),
             ),
         ],
       ),

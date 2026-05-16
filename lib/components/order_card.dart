@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:unshelf_seller/components/status_badge.dart';
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
 
 /// A compact card representing a single order.
+///
+/// Soft Editorial styling: honey-paper raised surface
+/// (`colorScheme.surfaceContainerHighest`), 14px radius, two-layer shadow.
 /// Used in the orders list and the dashboard recent-orders section.
 class OrderCard extends StatelessWidget {
   final String orderId;
@@ -30,84 +31,100 @@ class OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final dateLabel = DateFormat('MMM d, y').format(createdAt);
     final priceLabel =
-        NumberFormat.currency(symbol: '₱', decimalDigits: 2).format(totalPrice);
+        NumberFormat.currency(symbol: '₱', decimalDigits: 2)
+            .format(totalPrice);
 
-    return Card(
-      elevation: AppTheme.elevationLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .02),
+            offset: const Offset(0, 1),
+            blurRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF1F2A20).withValues(alpha: .06),
+            offset: const Offset(0, 8),
+            blurRadius: 28,
+          ),
+        ],
       ),
-      color: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      margin: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top row: order ID + status badge
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '#$orderId',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '#$orderId',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: cs.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  StatusBadge(status: status),
-                ],
-              ),
-
-              const SizedBox(height: AppTheme.spacing8),
-
-              // Middle row: buyer name + item count
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    buyerName,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  Text(
-                    '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                    const SizedBox(width: 8),
+                    StatusBadge(status: status),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        buyerName,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: AppTheme.spacing8),
-
-              // Bottom row: date + price
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    dateLabel,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                    Text(
+                      '$itemCount ${itemCount == 1 ? 'item' : 'items'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.65),
+                      ),
                     ),
-                  ),
-                  Text(
-                    priceLabel,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryColor,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      dateLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.65),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Text(
+                      priceLabel,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: cs.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
