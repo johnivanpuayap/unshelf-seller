@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'
     hide ChangeNotifierProvider;
 import 'package:provider/provider.dart';
 
-import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
@@ -25,7 +24,6 @@ import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/product_analytics_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,13 +75,6 @@ void main() async {
             create: (_) => SelectProductsViewModel(
               batchService: locator<IBatchService>(),
               productService: locator<IProductService>(),
-            ),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ProductAnalyticsViewModel(
-              productService: locator<IProductService>(),
-              analyticsService: locator<IAnalyticsService>(),
-              batchService: locator<IBatchService>(),
             ),
           ),
         ],

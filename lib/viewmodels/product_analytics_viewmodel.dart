@@ -1,48 +1,73 @@
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
-import 'package:unshelf_seller/core/logger.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/constants/status_constants.dart';
+import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 
-class ProductAnalyticsViewModel extends BaseViewModel {
-  final IProductService _productService;
-  final IAnalyticsService _analyticsService;
-  final IBatchService _batchService;
+part 'product_analytics_viewmodel.g.dart';
 
-  ProductAnalyticsViewModel({
-    required IProductService productService,
-    required IAnalyticsService analyticsService,
-    required IBatchService batchService,
-  })  : _productService = productService,
-        _analyticsService = analyticsService,
-        _batchService = batchService;
+/// Immutable state for the product analytics screen.
+class ProductAnalyticsState {
+  final bool isLoading;
+  final String? errorMessage;
+  final List<ProductModel> products;
+  final List<Map<String, dynamic>> topProducts;
 
-  List<ProductModel> _products = [];
-  List<ProductModel> get products => _products;
+  const ProductAnalyticsState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.products,
+    required this.topProducts,
+  });
 
-  List<Map<String, dynamic>> topProducts = [];
+  factory ProductAnalyticsState.initial() => const ProductAnalyticsState(
+        isLoading: false,
+        errorMessage: null,
+        products: <ProductModel>[],
+        topProducts: <Map<String, dynamic>>[],
+      );
+
+  ProductAnalyticsState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    List<ProductModel>? products,
+    List<Map<String, dynamic>>? topProducts,
+  }) {
+    return ProductAnalyticsState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      products: products ?? this.products,
+      topProducts: topProducts ?? this.topProducts,
+    );
+  }
+
+  static const _sentinel = Object();
+}
+
+/// Product analytics ViewModel — backs the product analytics screen.
+@riverpod
+class ProductAnalyticsViewModel extends _$ProductAnalyticsViewModel {
+  @override
+  ProductAnalyticsState build() => ProductAnalyticsState.initial();
 
   Future<void> fetchProductAnalytics() async {
-    setLoading(true);
-    // Fetch products from the service
-    _products = await _productService.getProducts();
-
-    setLoading(false);
+    state = state.copyWith(isLoading: true);
+    final products = await ref.read(productServiceProvider).getProducts();
+    state = state.copyWith(products: products, isLoading: false);
   }
 
   Future<void> getTopProducts() async {
-    setLoading(true);
-    // Clear any existing data
-    topProducts.clear();
+    state = state.copyWith(isLoading: true);
 
     // Fetch all completed orders from the last 14 days
-    final orderDocs = await _analyticsService.fetchOrders(
-      since: DateTime.now().subtract(const Duration(days: 13)),
-    );
+    final orderDocs = await ref.read(analyticsServiceProvider).fetchOrders(
+          since: DateTime.now().subtract(const Duration(days: 13)),
+        );
 
-    Map<String, int> batchCountMap = {};
+    final Map<String, int> batchCountMap = {};
 
     for (var orderDoc in orderDocs) {
       final data = orderDoc.data() as Map<String, dynamic>;
@@ -63,10 +88,11 @@ class ProductAnalyticsViewModel extends BaseViewModel {
       }
     }
 
-    Map<String, int> productEntries = {};
+    final Map<String, int> productEntries = {};
 
     for (final entry in batchCountMap.entries) {
-      final batch = await _batchService.getBatchById(entry.key);
+      final batch =
+          await ref.read(batchServiceProvider).getBatchById(entry.key);
       if (batch != null) {
         final productId = batch.productId;
         productEntries[productId] =
@@ -74,14 +100,15 @@ class ProductAnalyticsViewModel extends BaseViewModel {
       }
     }
 
-    var sortedEntries = productEntries.entries.toList()
-      ..sort((a, b) =>
-          b.value.compareTo(a.value)); // Sort by value in descending order
+    final sortedEntries = productEntries.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     final top5 = sortedEntries.take(5).toList();
 
+    final List<Map<String, dynamic>> topProducts = [];
     for (var entry in top5) {
-      final product = await _productService.getProduct(entry.key);
+      final product =
+          await ref.read(productServiceProvider).getProduct(entry.key);
       if (product != null) {
         topProducts.add({
           'productId': product.id,
@@ -91,6 +118,6 @@ class ProductAnalyticsViewModel extends BaseViewModel {
       }
     }
 
-    setLoading(false);
+    state = state.copyWith(topProducts: topProducts, isLoading: false);
   }
 }
