@@ -1,68 +1,125 @@
 import 'dart:typed_data';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:unshelf_seller/core/base_viewmodel.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/current_user_provider.dart';
-import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/models/store_model.dart';
 
-class StoreProfileViewModel extends BaseViewModel {
-  final IStoreService _storeService;
-  final CurrentUserProvider _currentUser;
-  late TextEditingController _nameController;
-  late TextEditingController _addressController;
-  late TextEditingController _phoneNumberController;
-  Uint8List? _profileImage;
-  final ImagePicker picker = ImagePicker();
+part 'store_profile_viewmodel.g.dart';
 
-  StoreProfileViewModel(StoreModel storeDetails,
-      {required IStoreService storeService,
-      CurrentUserProvider? currentUser})
-      : _storeService = storeService,
-        _currentUser = currentUser ?? locator<CurrentUserProvider>() {
-    _nameController = TextEditingController(text: storeDetails.storeName);
-    _addressController = TextEditingController(text: storeDetails.storeAddress);
-    _phoneNumberController =
-        TextEditingController(text: storeDetails.storePhoneNumber);
+/// Immutable state for the Edit Store Profile screen.
+///
+/// `profileImage` is the freshly-picked image bytes (null until the user
+/// taps the avatar). Form text lives on `TextEditingController`s held by
+/// the notifier (imperative widget glue, not state).
+class StoreProfileState {
+  final bool isLoading;
+  final String? errorMessage;
+  final Uint8List? profileImage;
+
+  const StoreProfileState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.profileImage,
+  });
+
+  factory StoreProfileState.initial() => const StoreProfileState(
+        isLoading: false,
+        errorMessage: null,
+        profileImage: null,
+      );
+
+  StoreProfileState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    Object? profileImage = _sentinel,
+  }) {
+    return StoreProfileState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      profileImage: identical(profileImage, _sentinel)
+          ? this.profileImage
+          : profileImage as Uint8List?,
+    );
   }
 
-  TextEditingController get nameController => _nameController;
-  Uint8List? get profileImage => _profileImage;
+  static const _sentinel = Object();
+}
+
+/// Store profile ViewModel — backs the Edit Store Profile screen. Owns
+/// `TextEditingController`s and an `ImagePicker` on the notifier instance
+/// (imperative widget glue, not state). The view calls [loadFromStore] in
+/// `initState` to seed the controllers from the current `StoreModel`.
+@riverpod
+class StoreProfileViewModel extends _$StoreProfileViewModel {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
+  final ImagePicker picker = ImagePicker();
+
+  late CurrentUserProvider _currentUser;
+
+  @override
+  StoreProfileState build() {
+    _currentUser = locator<CurrentUserProvider>();
+    ref.onDispose(() {
+      nameController.dispose();
+      addressController.dispose();
+      phoneNumberController.dispose();
+    });
+    return StoreProfileState.initial();
+  }
+
+  /// Seeds the text controllers from the supplied store model. Called once
+  /// from the view's `initState` to mirror the original constructor-time
+  /// initialization.
+  void loadFromStore(StoreModel storeDetails) {
+    nameController.text = storeDetails.storeName;
+    addressController.text = storeDetails.storeAddress ?? '';
+    phoneNumberController.text = storeDetails.storePhoneNumber ?? '';
+  }
 
   Future<void> pickImage() async {
-    XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       final Uint8List imageData = await image.readAsBytes();
-      _profileImage = imageData;
-      notifyListeners();
+      state = state.copyWith(profileImage: imageData);
     }
   }
 
   Future<void> updateStoreProfile() async {
-    if (_nameController.text.isNotEmpty) {
-      await runBusyFuture(() async {
-        final updateData = <String, dynamic>{
-          'storeName': _nameController.text,
-        };
+    if (nameController.text.isEmpty) return;
 
-        if (_addressController.text.isNotEmpty) {
-          updateData['storeAddress'] = _addressController.text;
-        }
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final updateData = <String, dynamic>{
+        'storeName': nameController.text,
+      };
 
-        if (_phoneNumberController.text.isNotEmpty) {
-          updateData['storePhoneNumber'] = _phoneNumberController.text;
-        }
+      if (addressController.text.isNotEmpty) {
+        updateData['storeAddress'] = addressController.text;
+      }
 
-        if (_profileImage != null) {
-          final imageUrl = await uploadImage(_profileImage!);
-          updateData['storeImageUrl'] = imageUrl;
-        }
+      if (phoneNumberController.text.isNotEmpty) {
+        updateData['storePhoneNumber'] = phoneNumberController.text;
+      }
 
-        await _storeService.updateStoreProfile(updateData);
-        notifyListeners();
-      });
+      if (state.profileImage != null) {
+        final imageUrl = await uploadImage(state.profileImage!);
+        updateData['storeImageUrl'] = imageUrl;
+      }
+
+      await ref.read(storeServiceProvider).updateStoreProfile(updateData);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -73,11 +130,5 @@ class StoreProfileViewModel extends BaseViewModel {
     await mainImageRef.putData(image!);
     final mainImageUrl = await mainImageRef.getDownloadURL();
     return mainImageUrl;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
   }
 }

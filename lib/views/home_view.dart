@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:unshelf_seller/components/chat_screen.dart';
 import 'package:unshelf_seller/utils/colors.dart';
@@ -11,14 +11,14 @@ import 'package:unshelf_seller/views/store_view.dart';
 import 'package:unshelf_seller/views/notifications_view.dart';
 import 'package:unshelf_seller/viewmodels/home_viewmodel.dart';
 
-class HomeView extends StatefulWidget {
+class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
 
   @override
-  State<HomeView> createState() => _HomeViewState();
+  ConsumerState<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _HomeViewState extends ConsumerState<HomeView> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
@@ -32,13 +32,13 @@ class _HomeViewState extends State<HomeView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<HomeViewModel>(context, listen: false).fetchNotifications();
+      ref.read(homeViewModelProvider.notifier).fetchNotifications();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<HomeViewModel>();
+    final homeState = ref.watch(homeViewModelProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -96,7 +96,7 @@ class _HomeViewState extends State<HomeView> {
                   minHeight: AppTheme.minTouchTarget,
                 ),
               ),
-              if (viewModel.unseenCount > 0)
+              if (homeState.unseenCount > 0)
                 Positioned(
                   top: 10,
                   right: 10,

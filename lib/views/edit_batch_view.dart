@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/batch_viewmodel.dart';
@@ -7,37 +7,39 @@ import 'package:intl/intl.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 
-class EditBatchView extends StatefulWidget {
+class EditBatchView extends ConsumerStatefulWidget {
   final String batchNumber;
 
   const EditBatchView({super.key, required this.batchNumber});
 
   @override
-  State<EditBatchView> createState() => _EditBatchViewState();
+  ConsumerState<EditBatchView> createState() => _EditBatchViewState();
 }
 
-class _EditBatchViewState extends State<EditBatchView> {
+class _EditBatchViewState extends ConsumerState<EditBatchView> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BatchViewModel>(context, listen: false)
+      ref
+          .read(batchViewModelProvider.notifier)
           .fetchBatch(widget.batchNumber);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<BatchViewModel>(context);
+    final state = ref.watch(batchViewModelProvider);
+    final notifier = ref.read(batchViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Edit Batch Details',
           onBackPressed: () {
-            viewModel.clearData();
+            notifier.clearData();
             Navigator.pop(context);
           }),
-      body: viewModel.isLoading
+      body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(AppTheme.spacing16),
@@ -47,7 +49,7 @@ class _EditBatchViewState extends State<EditBatchView> {
                     padding: const EdgeInsets.symmetric(
                         vertical: AppTheme.spacing12),
                     child: Text(
-                      'Batch Number: ${viewModel.batchNumber}',
+                      'Batch Number: ${state.batchNumber}',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             color: AppColors.primaryColor,
                           ),
@@ -57,7 +59,7 @@ class _EditBatchViewState extends State<EditBatchView> {
                   TextFormField(
                     decoration: const InputDecoration(labelText: 'Expiry Date'),
                     readOnly: true,
-                    controller: viewModel.expiryDateController,
+                    controller: notifier.expiryDateController,
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
@@ -69,9 +71,9 @@ class _EditBatchViewState extends State<EditBatchView> {
                       if (date != null) {
                         final formattedDate =
                             DateFormat('MM-dd-yyyy').format(date);
-                        viewModel.expiryDateController.text = formattedDate;
-                        viewModel.expiryDate = date;
-                        FocusScope.of(context).unfocus();
+                        notifier.expiryDateController.text = formattedDate;
+                        notifier.expiryDate = date;
+                        if (context.mounted) FocusScope.of(context).unfocus();
                       }
                     },
                   ),
@@ -80,21 +82,21 @@ class _EditBatchViewState extends State<EditBatchView> {
                     decoration: const InputDecoration(labelText: 'Price'),
                     keyboardType: TextInputType.number,
                     onChanged: (value) =>
-                        viewModel.price = double.tryParse(value),
-                    controller: viewModel.priceController,
+                        notifier.price = double.tryParse(value),
+                    controller: notifier.priceController,
                   ),
                   const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(labelText: 'Stock'),
                     keyboardType: TextInputType.number,
-                    onChanged: (value) => viewModel.stock = int.tryParse(value),
-                    controller: viewModel.stockController,
+                    onChanged: (value) => notifier.stock = int.tryParse(value),
+                    controller: notifier.stockController,
                   ),
                   const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
                     decoration: const InputDecoration(labelText: 'Quantifier'),
-                    onChanged: (value) => viewModel.quantifier = value,
-                    controller: viewModel.quantifierController,
+                    onChanged: (value) => notifier.quantifier = value,
+                    controller: notifier.quantifierController,
                   ),
                   const SizedBox(height: AppTheme.spacing16),
                   TextFormField(
@@ -102,17 +104,17 @@ class _EditBatchViewState extends State<EditBatchView> {
                         const InputDecoration(labelText: 'Discount (%)'),
                     keyboardType: TextInputType.number,
                     onChanged: (value) =>
-                        viewModel.discount = int.tryParse(value),
-                    controller: viewModel.discountController,
+                        notifier.discount = int.tryParse(value),
+                    controller: notifier.discountController,
                   ),
                   const SizedBox(height: AppTheme.spacing16),
                   CustomButton(
                     text: 'Update Product Batch',
                     onPressed: () async {
-                      await viewModel.updateBatch();
-                      if (!viewModel.isLoading) {
-                        viewModel.clearData();
-                        Navigator.pop(context, true);
+                      await notifier.updateBatch();
+                      if (!ref.read(batchViewModelProvider).isLoading) {
+                        notifier.clearData();
+                        if (context.mounted) Navigator.pop(context, true);
                       }
                     },
                   )

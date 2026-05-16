@@ -1,5 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/batch_model.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 import 'package:unshelf_seller/viewmodels/inventory_viewmodel.dart';
@@ -30,18 +32,27 @@ BatchModel _makeBatch(String batchNumber, String productId) {
   );
 }
 
+/// Builds a [ProviderContainer] with the inventory ViewModel's service
+/// dependencies overridden with the given mocks.
+ProviderContainer _makeContainer({
+  required MockProductService productService,
+  required MockBatchService batchService,
+}) {
+  final container = ProviderContainer(overrides: [
+    productServiceProvider.overrideWithValue(productService),
+    batchServiceProvider.overrideWithValue(batchService),
+  ]);
+  addTearDown(container.dispose);
+  return container;
+}
+
 void main() {
   late MockProductService mockProductService;
   late MockBatchService mockBatchService;
-  late InventoryViewModel vm;
 
   setUp(() {
     mockProductService = MockProductService();
     mockBatchService = MockBatchService();
-    vm = InventoryViewModel(
-      productService: mockProductService,
-      batchService: mockBatchService,
-    );
   });
 
   group('fetchInventory', () {
@@ -55,14 +66,22 @@ void main() {
         'p2': [_makeBatch('b3', 'p2')],
       };
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems.length, 2);
-      expect(vm.inventoryItems[0].name, 'Rice');
-      expect(vm.inventoryItems[0].batches.length, 2);
-      expect(vm.inventoryItems[1].name, 'Bread');
-      expect(vm.inventoryItems[1].batches.length, 1);
-      expect(vm.isLoading, isFalse);
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.inventoryItems.length, 2);
+      expect(state.inventoryItems[0].name, 'Rice');
+      expect(state.inventoryItems[0].batches.length, 2);
+      expect(state.inventoryItems[1].name, 'Bread');
+      expect(state.inventoryItems[1].batches.length, 1);
+      expect(state.isLoading, isFalse);
     });
 
     test('populates id and mainImageUrl from product', () async {
@@ -71,30 +90,54 @@ void main() {
         'p1': [_makeBatch('b1', 'p1')],
       };
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems[0].id, 'p1');
-      expect(vm.inventoryItems[0].mainImageUrl,
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.inventoryItems[0].id, 'p1');
+      expect(state.inventoryItems[0].mainImageUrl,
           'https://example.com/p1.jpg');
     });
 
     test('handles empty products list', () async {
       mockProductService.productsResult = [];
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems, isEmpty);
-      expect(vm.isLoading, isFalse);
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.inventoryItems, isEmpty);
+      expect(state.isLoading, isFalse);
     });
 
     test('handles products with no batches', () async {
       mockProductService.productsResult = [_makeProduct('p1', 'Rice')];
       mockBatchService.batchesByProductId = {'p1': []};
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems.length, 1);
-      expect(vm.inventoryItems[0].batches, isEmpty);
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.inventoryItems.length, 1);
+      expect(state.inventoryItems[0].batches, isEmpty);
     });
 
     test('uses fallback batchesResult when productId not in map', () async {
@@ -103,10 +146,18 @@ void main() {
       mockBatchService.batchesByProductId = {};
       mockBatchService.batchesResult = [fallbackBatch];
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems[0].batches.length, 1);
-      expect(vm.inventoryItems[0].batches[0].batchNumber, 'bf');
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.inventoryItems[0].batches.length, 1);
+      expect(state.inventoryItems[0].batches[0].batchNumber, 'bf');
     });
   });
 
@@ -114,20 +165,36 @@ void main() {
     test('product service error sets errorMessage', () async {
       mockProductService.errorToThrow = Exception('Firestore unavailable');
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.errorMessage, contains('Firestore unavailable'));
-      expect(vm.isLoading, isFalse);
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.errorMessage, contains('Firestore unavailable'));
+      expect(state.isLoading, isFalse);
     });
 
     test('batch service error sets errorMessage', () async {
       mockProductService.productsResult = [_makeProduct('p1', 'Rice')];
       mockBatchService.errorToThrow = Exception('Batch fetch failed');
 
-      await vm.fetchInventory();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.errorMessage, contains('Batch fetch failed'));
-      expect(vm.isLoading, isFalse);
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+
+      final state = container.read(inventoryViewModelProvider);
+      expect(state.errorMessage, contains('Batch fetch failed'));
+      expect(state.isLoading, isFalse);
     });
   });
 
@@ -137,18 +204,34 @@ void main() {
       mockBatchService.batchesByProductId = {
         'p1': [_makeBatch('b1', 'p1')],
       };
-      await vm.fetchInventory();
-      expect(vm.inventoryItems, isNotEmpty);
 
-      vm.clearData();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems, isEmpty);
+      await container
+          .read(inventoryViewModelProvider.notifier)
+          .fetchInventory();
+      expect(container.read(inventoryViewModelProvider).inventoryItems,
+          isNotEmpty);
+
+      container.read(inventoryViewModelProvider.notifier).clearData();
+
+      expect(
+          container.read(inventoryViewModelProvider).inventoryItems, isEmpty);
     });
 
     test('clearData on already empty list stays empty', () {
-      vm.clearData();
+      final container = _makeContainer(
+        productService: mockProductService,
+        batchService: mockBatchService,
+      );
 
-      expect(vm.inventoryItems, isEmpty);
+      container.read(inventoryViewModelProvider.notifier).clearData();
+
+      expect(
+          container.read(inventoryViewModelProvider).inventoryItems, isEmpty);
     });
   });
 }

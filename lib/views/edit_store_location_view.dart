@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+
+import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/models/store_model.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
-import 'package:provider/provider.dart';
-import 'package:unshelf_seller/models/store_model.dart';
-import 'package:unshelf_seller/components/custom_app_bar.dart';
 
-class EditStoreLocationView extends StatefulWidget {
+class EditStoreLocationView extends ConsumerStatefulWidget {
   final StoreModel storeDetails;
 
   const EditStoreLocationView({super.key, required this.storeDetails});
 
   @override
-  State<EditStoreLocationView> createState() => _EditStoreLocationViewState();
+  ConsumerState<EditStoreLocationView> createState() =>
+      _EditStoreLocationViewState();
 }
 
-class _EditStoreLocationViewState extends State<EditStoreLocationView> {
-  late StoreLocationViewModel viewModel;
+class _EditStoreLocationViewState extends ConsumerState<EditStoreLocationView> {
   late StoreModel storeDetails;
 
   @override
   void initState() {
     super.initState();
     storeDetails = widget.storeDetails;
-    viewModel = Provider.of<StoreLocationViewModel>(context, listen: false);
     _initializeLocation();
   }
 
@@ -49,6 +49,8 @@ class _EditStoreLocationViewState extends State<EditStoreLocationView> {
 
   @override
   Widget build(BuildContext context) {
+    final notifier = ref.read(storeLocationViewModelProvider.notifier);
+
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Edit Store Location',
@@ -62,12 +64,14 @@ class _EditStoreLocationViewState extends State<EditStoreLocationView> {
           ),
           onPressed: () async {
             try {
-              await viewModel.saveLocation();
+              await notifier.saveLocation();
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Location saved successfully!')),
               );
               Navigator.pop(context, true);
             } catch (e) {
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Failed to save location: $e')),
               );
@@ -83,7 +87,7 @@ class _EditStoreLocationViewState extends State<EditStoreLocationView> {
           ),
           initialZoom: 15.0,
           onTap: (tapPosition, point) {
-            viewModel.updateLocation(point);
+            notifier.updateLocation(point);
             setState(() {
               storeDetails.storeLatitude = point.latitude;
               storeDetails.storeLongitude = point.longitude;

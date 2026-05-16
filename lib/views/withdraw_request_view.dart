@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
 
-class WithdrawRequestView extends StatefulWidget {
-  final WalletViewModel walletViewModel;
-
-  const WithdrawRequestView({super.key, required this.walletViewModel});
+class WithdrawRequestView extends ConsumerStatefulWidget {
+  const WithdrawRequestView({super.key});
 
   @override
-  State<WithdrawRequestView> createState() => _WithdrawRequestViewState();
+  ConsumerState<WithdrawRequestView> createState() =>
+      _WithdrawRequestViewState();
 }
 
-class _WithdrawRequestViewState extends State<WithdrawRequestView> {
+class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _bankAccountController = TextEditingController();
@@ -35,6 +35,7 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final walletState = ref.watch(walletViewModelProvider);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -49,7 +50,7 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Current Balance: \u20B1 ${widget.walletViewModel.balance.toStringAsFixed(2)}',
+                'Current Balance: ₱ ${walletState.balance.toStringAsFixed(2)}',
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: AppTheme.spacing16),
@@ -142,7 +143,7 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
                       _errorMessage = 'Please enter a valid amount.';
                     } else if (amount < 1000) {
                       _errorMessage = 'The minimum withdrawal amount is 1000.';
-                    } else if (widget.walletViewModel.balance < amount) {
+                    } else if (walletState.balance < amount) {
                       _errorMessage =
                           'Insufficient balance for this withdrawal.';
                     } else {
@@ -150,8 +151,10 @@ class _WithdrawRequestViewState extends State<WithdrawRequestView> {
                       _errorMessage = '';
 
                       // Call the withdraw request
-                      widget.walletViewModel.withdrawRequest(
-                          amount, fullName, _selectedBank!, bankAccount);
+                      ref
+                          .read(walletViewModelProvider.notifier)
+                          .withdrawRequest(
+                              amount, fullName, _selectedBank!, bankAccount);
                       Navigator.pop(context);
                     }
                   });

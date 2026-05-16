@@ -1,118 +1,166 @@
-import 'package:unshelf_seller/models/bundle_model.dart';
-import 'package:unshelf_seller/models/product_model.dart';
-import 'package:unshelf_seller/models/item_model.dart';
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_bundle_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
+import 'package:unshelf_seller/models/bundle_model.dart';
+import 'package:unshelf_seller/models/item_model.dart';
+import 'package:unshelf_seller/models/product_model.dart';
 
-class ListingViewModel extends BaseViewModel {
-  final IProductService _productService;
-  final IBundleService _bundleService;
+part 'listing_viewmodel.g.dart';
 
-  List<ItemModel> _items = [];
-  List<dynamic> _filteredItems = [];
-  bool _showingProducts = true;
-  List<ItemModel> get items => _items;
-  bool get showingProducts => _showingProducts;
-  String _searchQuery = '';
-  List<dynamic> get filteredItems => _filteredItems;
-  String _filter = 'All';
-  String get filter => _filter;
+/// Immutable state for the listings (products + bundles) screen.
+class ListingState {
+  final bool isLoading;
+  final String? errorMessage;
+  final List<ItemModel> items;
+  final List<dynamic> filteredItems;
+  final bool showingProducts;
+  final String searchQuery;
+  final String filter;
 
-  ListingViewModel({
-    required IProductService productService,
-    required IBundleService bundleService,
-  })  : _productService = productService,
-        _bundleService = bundleService {
-    fetchItems();
+  const ListingState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.items,
+    required this.filteredItems,
+    required this.showingProducts,
+    required this.searchQuery,
+    required this.filter,
+  });
+
+  factory ListingState.initial() => const ListingState(
+        isLoading: false,
+        errorMessage: null,
+        items: <ItemModel>[],
+        filteredItems: <dynamic>[],
+        showingProducts: true,
+        searchQuery: '',
+        filter: 'All',
+      );
+
+  ListingState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    List<ItemModel>? items,
+    List<dynamic>? filteredItems,
+    bool? showingProducts,
+    String? searchQuery,
+    String? filter,
+  }) {
+    return ListingState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      items: items ?? this.items,
+      filteredItems: filteredItems ?? this.filteredItems,
+      showingProducts: showingProducts ?? this.showingProducts,
+      searchQuery: searchQuery ?? this.searchQuery,
+      filter: filter ?? this.filter,
+    );
   }
+
+  static const _sentinel = Object();
+}
+
+/// Listing ViewModel — fetches both products and bundles, merges them
+/// into a single list, and supports search + filter (All / Products /
+/// Bundles).
+///
+/// The original ChangeNotifier called `fetchItems()` from its constructor;
+/// that side-effect has been moved to the view's `initState` (see
+/// [ListingsView]).
+@riverpod
+class ListingViewModel extends _$ListingViewModel {
+  @override
+  ListingState build() => ListingState.initial();
 
   void updateSearchQuery(String query) {
-    _searchQuery = query;
-    _filterItems();
-    notifyListeners();
-  }
-
-  void _filterItems() {
-    if (_searchQuery.isEmpty) {
-      _filteredItems = _items;
-    } else {
-      _filteredItems = _items.where((item) {
-        final name = item.name.toLowerCase();
-        final query = _searchQuery.toLowerCase();
-        return name.contains(query);
-      }).toList();
-    }
-
-    if (_filter == 'Bundles') {
-      _filteredItems = _filteredItems.whereType<BundleModel>().toList();
-    }
-
-    if (_filter == 'Products') {
-      _filteredItems = _filteredItems.whereType<ProductModel>().toList();
-    }
+    final next = state.copyWith(searchQuery: query);
+    state = next.copyWith(filteredItems: _computeFilter(next));
   }
 
   void setFilter(String filter) {
-    _filter = filter;
-    _filterItems();
-    notifyListeners();
+    final next = state.copyWith(filter: filter);
+    state = next.copyWith(filteredItems: _computeFilter(next));
   }
 
   Future<void> refreshItems() async {
-    _filterItems();
+    state = state.copyWith(filteredItems: _computeFilter(state));
   }
 
   Future<void> fetchItems() async {
-    setLoading(true);
-
+    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final products = await _productService.getProducts();
-      final bundles = await _bundleService.getBundles();
+      final products = await ref.read(productServiceProvider).getProducts();
+      final bundles = await ref.read(bundleServiceProvider).getBundles();
 
-      _items = [
+      final items = <ItemModel>[
         ...products.cast<ItemModel>(),
         ...bundles.cast<ItemModel>(),
       ];
 
-      _filteredItems = _items;
-    } catch (e) {
-      AppLogger.error('Error fetching items: $e');
-      _items = [];
-    } finally {
-      setLoading(false);
+      final next = state.copyWith(isLoading: false, items: items);
+      state = next.copyWith(filteredItems: _computeFilter(next));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error fetching items: $e', e, stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        items: const <ItemModel>[],
+        filteredItems: const <dynamic>[],
+        errorMessage: e.toString(),
+      );
     }
   }
 
   Future<void> addProduct(ProductModel product) async {
-    await _productService.addProduct(product);
-    fetchItems();
+    await ref.read(productServiceProvider).addProduct(product);
+    await fetchItems();
   }
 
   Future<void> addBundle(BundleModel bundle) async {
-    await _bundleService.createBundle(bundle);
-    fetchItems();
+    await ref.read(bundleServiceProvider).createBundle(bundle);
+    await fetchItems();
   }
 
   Future<void> deleteItem(String itemId, bool isProduct) async {
     if (isProduct) {
-      await _productService.deleteProduct(itemId);
+      await ref.read(productServiceProvider).deleteProduct(itemId);
     } else {
-      await _bundleService.deleteBundle(itemId);
+      await ref.read(bundleServiceProvider).deleteBundle(itemId);
     }
 
-    _items.removeWhere((item) => item.id == itemId);
-    notifyListeners();
+    final remaining = state.items.where((i) => i.id != itemId).toList();
+    final next = state.copyWith(items: remaining);
+    state = next.copyWith(filteredItems: _computeFilter(next));
   }
 
   void toggleView() {
-    _showingProducts = !_showingProducts;
+    state = state.copyWith(showingProducts: !state.showingProducts);
     fetchItems();
   }
 
   void clear() {
-    _items = [];
-    setLoading(true);
+    state = ListingState.initial().copyWith(isLoading: true);
+  }
+
+  List<dynamic> _computeFilter(ListingState s) {
+    List<dynamic> result;
+    if (s.searchQuery.isEmpty) {
+      result = List<dynamic>.from(s.items);
+    } else {
+      final q = s.searchQuery.toLowerCase();
+      result = s.items.where((item) {
+        return item.name.toLowerCase().contains(q);
+      }).toList();
+    }
+
+    if (s.filter == 'Bundles') {
+      result = result.whereType<BundleModel>().toList();
+    } else if (s.filter == 'Products') {
+      result = result.whereType<ProductModel>().toList();
+    }
+
+    return result;
   }
 }

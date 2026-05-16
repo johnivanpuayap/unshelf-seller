@@ -1,28 +1,51 @@
-// view_models/settings_view_model.dart
-import 'package:unshelf_seller/core/base_viewmodel.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/models/settings_model.dart';
 
-class SettingsViewModel extends BaseViewModel {
-  SettingsModel _settings = SettingsModel(
-    notificationsEnabled: true,
-    language: 'English',
-  );
+part 'settings_viewmodel.g.dart';
 
-  SettingsModel get settings => _settings;
+/// Immutable state for the Settings screen. Wraps a mutable `SettingsModel`
+/// purely for state-emission purposes — toggling notifications or changing
+/// language replaces the inner model entirely (mirrors the original
+/// ChangeNotifier).
+class SettingsState {
+  final SettingsModel settings;
+
+  const SettingsState({required this.settings});
+
+  factory SettingsState.initial() => SettingsState(
+        settings: SettingsModel(
+          notificationsEnabled: true,
+          language: 'English',
+        ),
+      );
+
+  SettingsState copyWith({SettingsModel? settings}) {
+    return SettingsState(settings: settings ?? this.settings);
+  }
+}
+
+/// Settings ViewModel — backs the Settings screen.
+@Riverpod(keepAlive: true)
+class SettingsViewModel extends _$SettingsViewModel {
+  @override
+  SettingsState build() => SettingsState.initial();
 
   void toggleNotifications(bool value) {
-    _settings = SettingsModel(
-      notificationsEnabled: value,
-      language: _settings.language,
+    state = state.copyWith(
+      settings: SettingsModel(
+        notificationsEnabled: value,
+        language: state.settings.language,
+      ),
     );
-    notifyListeners();
   }
 
   void changeLanguage(String newLanguage) {
-    _settings = SettingsModel(
-      notificationsEnabled: _settings.notificationsEnabled,
-      language: newLanguage,
+    state = state.copyWith(
+      settings: SettingsModel(
+        notificationsEnabled: state.settings.notificationsEnabled,
+        language: newLanguage,
+      ),
     );
-    notifyListeners();
   }
 }

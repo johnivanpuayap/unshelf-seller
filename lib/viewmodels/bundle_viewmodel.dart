@@ -4,23 +4,76 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_bundle_service.dart';
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/models/bundle_model.dart';
 
-class BundleViewModel extends BaseViewModel {
-  final IBundleService _bundleService;
-  final IBatchService _batchService;
+part 'bundle_viewmodel.g.dart';
 
-  BundleViewModel({
-    required IBundleService bundleService,
-    required IBatchService batchService,
-  })  : _bundleService = bundleService,
-        _batchService = batchService;
+/// Immutable state for the bundle add/edit/details screens.
+///
+/// `TextEditingController`s, `formKey`, and the `ImagePicker` remain
+/// owned by the notifier — see [BundleViewModel].
+class BundleState {
+  final bool isLoading;
+  final String? errorMessage;
+  final BundleModel? bundle;
+  final Uint8List? mainImageData;
+  final String selectedCategory;
+  final bool errorFound;
 
+  const BundleState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.bundle,
+    required this.mainImageData,
+    required this.selectedCategory,
+    required this.errorFound,
+  });
+
+  factory BundleState.initial() => const BundleState(
+        isLoading: false,
+        errorMessage: null,
+        bundle: null,
+        mainImageData: null,
+        selectedCategory: '',
+        errorFound: false,
+      );
+
+  BundleState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    Object? bundle = _sentinel,
+    Object? mainImageData = _sentinel,
+    String? selectedCategory,
+    bool? errorFound,
+  }) {
+    return BundleState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      bundle: identical(bundle, _sentinel)
+          ? this.bundle
+          : bundle as BundleModel?,
+      mainImageData: identical(mainImageData, _sentinel)
+          ? this.mainImageData
+          : mainImageData as Uint8List?,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      errorFound: errorFound ?? this.errorFound,
+    );
+  }
+
+  static const _sentinel = Object();
+}
+
+/// Bundle ViewModel — backs the add / edit / details bundle screens.
+/// Owns the form's controllers, key, and image picker (notifier-side
+/// fields, not state).
+@riverpod
+class BundleViewModel extends _$BundleViewModel {
   final TextEditingController bundleNameController = TextEditingController();
   final TextEditingController bundlePriceController = TextEditingController();
   final TextEditingController bundleStockController = TextEditingController();
@@ -28,25 +81,35 @@ class BundleViewModel extends BaseViewModel {
       TextEditingController();
   final TextEditingController bundleDescriptionController =
       TextEditingController();
-  final formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
-  Uint8List? _mainImageData;
-  Uint8List? get mainImageData => _mainImageData;
-
-  BundleModel? _bundle;
-  BundleModel? get bundle => _bundle;
-
-  String selectedCategory = '';
-  List<String> categories = [
+  final List<String> categories = const [
     'Grocery',
     'Fruits',
     'Vegetables',
     'Baked Goods',
   ];
 
-  final bool _errorFound = false;
-  bool get errorFound => _errorFound;
+  @override
+  BundleState build() {
+    ref.onDispose(() {
+      bundleNameController.dispose();
+      bundlePriceController.dispose();
+      bundleStockController.dispose();
+      bundleDiscountController.dispose();
+      bundleDescriptionController.dispose();
+    });
+    return BundleState.initial();
+  }
+
+  /// Mutable `selectedCategory` setter — kept for compatibility with
+  /// views that do `viewModel.selectedCategory = newValue`.
+  set selectedCategory(String value) {
+    state = state.copyWith(selectedCategory: value);
+  }
+
+  String get selectedCategory => state.selectedCategory;
 
   void initializeControllers(BundleModel bundle) {
     bundleNameController.text = bundle.name;
@@ -54,11 +117,8 @@ class BundleViewModel extends BaseViewModel {
     bundleStockController.text = bundle.stock.toString();
     bundleDiscountController.text = bundle.discount.toString();
     bundleDescriptionController.text = bundle.description;
-    _updateBundleStock();
-  }
-
-  void _updateBundleStock() {
-    notifyListeners();
+    // Force a rebuild so consumers see the updated controllers.
+    state = state.copyWith();
   }
 
   Future<void> createBundle(
@@ -70,11 +130,10 @@ class BundleViewModel extends BaseViewModel {
       final bundleDiscount = int.tryParse(bundleDiscountController.text) ?? 0;
       final bundleDescription = bundleDescriptionController.text;
 
-      final mainImageRef = FirebaseStorage.instance
-          .ref()
-          .child('bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final mainImageRef = FirebaseStorage.instance.ref().child(
+          'bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-      await mainImageRef.putData(_mainImageData!);
+      await mainImageRef.putData(state.mainImageData!);
 
       final mainImageUrl = await mainImageRef.getDownloadURL();
 
@@ -83,7 +142,7 @@ class BundleViewModel extends BaseViewModel {
         name: bundleName,
         mainImageUrl: mainImageUrl,
         description: bundleDescription,
-        category: selectedCategory,
+        category: state.selectedCategory,
         items: productDetails.entries
             .map((entry) => {
                   'batchId': entry.key,
@@ -96,11 +155,12 @@ class BundleViewModel extends BaseViewModel {
         discount: bundleDiscount,
       );
 
-      _bundleService.createBundle(bundle);
+      await ref.read(bundleServiceProvider).createBundle(bundle);
       AppLogger.debug('Bundle created successfully');
-      notifyListeners();
-    } catch (e) {
-      AppLogger.error('Failed to create bundle: $e');
+      // Trigger rebuild
+      state = state.copyWith();
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to create bundle: $e', e, stackTrace);
     }
   }
 
@@ -108,11 +168,10 @@ class BundleViewModel extends BaseViewModel {
     try {
       final response = await http.get(Uri.parse(imageUrl));
       if (response.statusCode == 200) {
-        _mainImageData = response.bodyBytes;
-        notifyListeners();
+        state = state.copyWith(mainImageData: response.bodyBytes);
       }
-    } catch (e) {
-      AppLogger.error('Error loading image: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error loading image: $e', e, stackTrace);
     }
   }
 
@@ -121,54 +180,65 @@ class BundleViewModel extends BaseViewModel {
 
     if (image != null) {
       final Uint8List imageData = await image.readAsBytes();
-
-      _mainImageData = imageData;
-      notifyListeners();
+      state = state.copyWith(mainImageData: imageData);
     }
   }
 
   void deleteImage() {
-    _mainImageData = null;
-    notifyListeners();
+    state = state.copyWith(mainImageData: null);
   }
 
   Future<void> getBundleDetails(String bundleId) async {
-    setLoading(true);
-    notifyListeners();
-    // Fetch bundle details
-    _bundle = await _bundleService.getBundle(bundleId);
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final bundle = await ref.read(bundleServiceProvider).getBundle(bundleId);
 
-    for (var item in _bundle!.items) {
-      final batch = await _batchService.getBatchById(item['batchId']);
-      item['name'] = batch!.product!.name;
-      item['imageUrl'] = batch.product!.mainImageUrl;
+      for (var item in bundle!.items) {
+        final batch = await ref
+            .read(batchServiceProvider)
+            .getBatchById(item['batchId']);
+        item['name'] = batch!.product!.name;
+        item['imageUrl'] = batch.product!.mainImageUrl;
+      }
+
+      state = state.copyWith(bundle: bundle);
+
+      // Load main image
+      await loadImageFromUrl(bundle.mainImageUrl);
+      state = state.copyWith(isLoading: false);
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in BundleViewModel.getBundleDetails: $e', e,
+          stackTrace);
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
-
-    // Load main image
-    await loadImageFromUrl(_bundle!.mainImageUrl);
-    setLoading(false);
-    notifyListeners();
   }
 
   Future<void> initializeBundle(String bundleId) async {
-    setLoading(true);
-    notifyListeners();
-    if (bundleId.isNotEmpty) {
-      await getBundleDetails(bundleId);
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      if (bundleId.isNotEmpty) {
+        await getBundleDetails(bundleId);
+      }
+
+      final bundle = state.bundle;
+      if (bundle != null) {
+        bundleNameController.text = bundle.name;
+        bundleDescriptionController.text = bundle.description;
+        bundlePriceController.text = bundle.price.toString();
+        bundleStockController.text = bundle.stock.toString();
+        bundleDiscountController.text = bundle.discount.toString();
+        state = state.copyWith(selectedCategory: bundle.category);
+      }
+
+      AppLogger.debug('category: ${state.selectedCategory}');
+      AppLogger.debug('Bundle initialized successfully');
+
+      state = state.copyWith(isLoading: false);
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in BundleViewModel.initializeBundle: $e', e,
+          stackTrace);
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
-
-    bundleNameController.text = _bundle!.name;
-    bundleDescriptionController.text = _bundle!.description;
-    bundlePriceController.text = _bundle!.price.toString();
-    bundleStockController.text = _bundle!.stock.toString();
-    bundleDiscountController.text = _bundle!.discount.toString();
-    selectedCategory = _bundle!.category;
-
-    AppLogger.debug('category: $selectedCategory');
-    AppLogger.debug('Bundle initialized successfully');
-
-    setLoading(false);
-    notifyListeners();
   }
 
   Future<void> updateBundle() async {
@@ -179,31 +249,30 @@ class BundleViewModel extends BaseViewModel {
       final bundleDiscount = int.tryParse(bundleDiscountController.text) ?? 0;
       final bundleDescription = bundleDescriptionController.text;
 
-      final mainImageRef = FirebaseStorage.instance
-          .ref()
-          .child('bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final mainImageRef = FirebaseStorage.instance.ref().child(
+          'bundle_images/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-      await mainImageRef.putData(_mainImageData!);
+      await mainImageRef.putData(state.mainImageData!);
 
       final mainImageUrl = await mainImageRef.getDownloadURL();
 
       BundleModel updatedBundle = BundleModel(
-        id: _bundle!.id,
+        id: state.bundle!.id,
         name: bundleName,
         mainImageUrl: mainImageUrl,
         description: bundleDescription,
-        category: selectedCategory,
-        items: _bundle!.items,
+        category: state.selectedCategory,
+        items: state.bundle!.items,
         price: bundlePrice,
         stock: bundleStock,
         discount: bundleDiscount,
       );
 
-      _bundleService.updateBundle(updatedBundle);
+      await ref.read(bundleServiceProvider).updateBundle(updatedBundle);
       AppLogger.debug('Bundle updated successfully');
-      notifyListeners();
-    } catch (e) {
-      AppLogger.error('Failed to update bundle: $e');
+      state = state.copyWith();
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update bundle: $e', e, stackTrace);
     }
   }
 
@@ -213,8 +282,9 @@ class BundleViewModel extends BaseViewModel {
     bundleStockController.clear();
     bundleDiscountController.clear();
     bundleDescriptionController.clear();
-    _mainImageData = null;
-    selectedCategory = '';
-    notifyListeners();
+    state = state.copyWith(
+      mainImageData: null,
+      selectedCategory: '',
+    );
   }
 }

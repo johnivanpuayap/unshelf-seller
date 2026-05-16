@@ -1,21 +1,21 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unshelf_seller/components/chart.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/product_analytics_viewmodel.dart';
 
-class ProductAnalyticsView extends StatefulWidget {
+class ProductAnalyticsView extends ConsumerStatefulWidget {
   const ProductAnalyticsView({super.key});
 
   @override
-  State<ProductAnalyticsView> createState() => _ProductAnalyticsViewState();
+  ConsumerState<ProductAnalyticsView> createState() =>
+      _ProductAnalyticsViewState();
 }
 
-class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
-  late ProductAnalyticsViewModel viewModel;
+class _ProductAnalyticsViewState extends ConsumerState<ProductAnalyticsView> {
   String selectedSalesValue = 'Daily';
   String selectedOrdersValue = 'Daily';
   String selectedProduct = 'Apples';
@@ -28,9 +28,9 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel =
-          Provider.of<ProductAnalyticsViewModel>(context, listen: false);
-      viewModel.fetchProductAnalytics();
+      ref
+          .read(productAnalyticsViewModelProvider.notifier)
+          .fetchProductAnalytics();
     });
 
     DateTime today = DateTime.now();
@@ -136,7 +136,7 @@ class _ProductAnalyticsViewState extends State<ProductAnalyticsView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final viewModel = Provider.of<ProductAnalyticsViewModel>(context);
+    final viewModel = ref.watch(productAnalyticsViewModelProvider);
     var dataName = data.keys.toList();
 
     return Scaffold(

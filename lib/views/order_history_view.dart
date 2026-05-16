@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/status_badge.dart';
@@ -9,27 +10,27 @@ import 'package:unshelf_seller/views/order_history_details_view.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 
-class OrderHistoryView extends StatefulWidget {
+class OrderHistoryView extends ConsumerStatefulWidget {
   const OrderHistoryView({super.key});
 
   @override
-  State<OrderHistoryView> createState() => _OrderHistoryViewState();
+  ConsumerState<OrderHistoryView> createState() => _OrderHistoryViewState();
 }
 
-class _OrderHistoryViewState extends State<OrderHistoryView> {
+class _OrderHistoryViewState extends ConsumerState<OrderHistoryView> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel = Provider.of<OrderViewModel>(context, listen: false);
-      viewModel.fetchOrdersHistory();
+      ref.read(orderViewModelProvider.notifier).fetchOrdersHistory();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final viewModel = Provider.of<OrderViewModel>(context);
+    final state = ref.watch(orderViewModelProvider);
+    final notifier = ref.read(orderViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -56,7 +57,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                 // Filter PopupMenuButton
                 PopupMenuButton<String>(
                   onSelected: (value) {
-                    viewModel.currentStatus = value;
+                    notifier.currentStatus = value;
                   },
                   itemBuilder: (BuildContext context) {
                     return [
@@ -81,7 +82,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                         const Icon(Icons.filter_list, size: 20),
                         const SizedBox(width: AppTheme.spacing4),
                         Text(
-                          viewModel.currentStatus,
+                          state.currentStatus,
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],
@@ -92,7 +93,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                 // Sort Order PopupMenuButton
                 PopupMenuButton<String>(
                   onSelected: (value) {
-                    viewModel.sortOrder = value;
+                    notifier.sortOrder = value;
                   },
                   itemBuilder: (BuildContext context) {
                     return ['Ascending', 'Descending'].map((String choice) {
@@ -110,7 +111,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                         const Icon(Icons.sort, size: 20),
                         const SizedBox(width: AppTheme.spacing4),
                         Text(
-                          viewModel.sortOrder,
+                          state.sortOrder,
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],
@@ -123,13 +124,13 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
 
           // Orders List
           Expanded(
-            child: Consumer<OrderViewModel>(
-              builder: (context, viewModel, child) {
-                if (viewModel.isLoading) {
+            child: Builder(
+              builder: (context) {
+                if (state.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final filteredOrders = viewModel.filteredOrders;
+                final filteredOrders = state.filteredOrders;
 
                 if (filteredOrders.isEmpty) {
                   final statusMessages = {
@@ -140,7 +141,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                     'Cancelled': 'No cancelled orders',
                   };
 
-                  String message = statusMessages[viewModel.currentStatus] ??
+                  String message = statusMessages[state.currentStatus] ??
                       'No orders found.';
                   return EmptyState(
                     icon: Icons.receipt_long_outlined,
@@ -156,7 +157,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
 
                     return InkWell(
                       onTap: () {
-                        viewModel.selectOrder(order.id);
+                        notifier.selectOrder(order.id);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -210,7 +211,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  '\u20B1 ${order.totalPrice.toStringAsFixed(2)}',
+                                  '₱ ${order.totalPrice.toStringAsFixed(2)}',
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     color: AppColors.primaryColor,
                                   ),

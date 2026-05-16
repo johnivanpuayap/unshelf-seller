@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
@@ -14,43 +14,39 @@ import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 
-class OrderDetailsView extends StatefulWidget {
+class OrderDetailsView extends ConsumerStatefulWidget {
   final String orderId;
 
   const OrderDetailsView({super.key, required this.orderId});
 
   @override
-  State<OrderDetailsView> createState() => _OrderDetailsViewState();
+  ConsumerState<OrderDetailsView> createState() => _OrderDetailsViewState();
 }
 
-class _OrderDetailsViewState extends State<OrderDetailsView> {
+class _OrderDetailsViewState extends ConsumerState<OrderDetailsView> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OrderViewModel>(context, listen: false)
-          .selectOrder(widget.orderId);
+      ref.read(orderViewModelProvider.notifier).selectOrder(widget.orderId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<OrderViewModel>(
-      builder: (context, viewModel, _) {
-        final order = viewModel.selectedOrder;
+    final state = ref.watch(orderViewModelProvider);
+    final order = state.selectedOrder;
 
-        return Scaffold(
-          appBar: CustomAppBar(
-            title: order != null ? 'Order #${order.orderId}' : 'Order Details',
-          ),
-          body: viewModel.isLoading || order == null
-              ? const Center(child: CircularProgressIndicator())
-              : _OrderDetailsBody(order: order),
-          bottomNavigationBar: viewModel.isLoading || order == null
-              ? null
-              : _ActionBar(order: order),
-        );
-      },
+    return Scaffold(
+      appBar: CustomAppBar(
+        title: order != null ? 'Order #${order.orderId}' : 'Order Details',
+      ),
+      body: state.isLoading || order == null
+          ? const Center(child: CircularProgressIndicator())
+          : _OrderDetailsBody(order: order),
+      bottomNavigationBar: state.isLoading || order == null
+          ? null
+          : _ActionBar(order: order),
     );
   }
 }
@@ -106,7 +102,7 @@ class _StatusHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateLabel = DateFormat('MMM d, y \u2022 h:mm a')
+    final dateLabel = DateFormat('MMM d, y • h:mm a')
         .format(order.createdAt.toDate().toLocal());
 
     return Card(
@@ -254,7 +250,7 @@ class _OrderItemsCard extends StatelessWidget {
               _buildSummaryRow(
                 theme,
                 'Subtotal',
-                '\u20B1${order.subtotal.toStringAsFixed(2)}',
+                '₱${order.subtotal.toStringAsFixed(2)}',
               ),
 
             // Points discount
@@ -263,7 +259,7 @@ class _OrderItemsCard extends StatelessWidget {
               _buildSummaryRow(
                 theme,
                 'Points discount',
-                '-\u20B1${order.pointsDiscount.toStringAsFixed(2)}',
+                '-₱${order.pointsDiscount.toStringAsFixed(2)}',
                 valueColor: AppColors.success,
               ),
             ],
@@ -274,7 +270,7 @@ class _OrderItemsCard extends StatelessWidget {
             _buildSummaryRow(
               theme,
               'Total',
-              '\u20B1${order.totalPrice.toStringAsFixed(2)}',
+              '₱${order.totalPrice.toStringAsFixed(2)}',
               isBold: true,
               valueColor: AppColors.primaryColor,
             ),
@@ -337,7 +333,7 @@ class _OrderItemsCard extends StatelessWidget {
           ),
           const SizedBox(width: AppTheme.spacing8),
           Text(
-            '\u20B1${(item.price ?? 0).toStringAsFixed(2)}',
+            '₱${(item.price ?? 0).toStringAsFixed(2)}',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -432,7 +428,7 @@ class _PickupInfoCard extends StatelessWidget {
           theme,
           Icons.schedule_rounded,
           'Pickup time',
-          DateFormat('MMM d, y \u2022 h:mm a')
+          DateFormat('MMM d, y • h:mm a')
               .format(order.pickupTime!.toDate().toLocal()),
         ));
       }
@@ -443,7 +439,7 @@ class _PickupInfoCard extends StatelessWidget {
           theme,
           Icons.payments_outlined,
           'Pending payment',
-          '\u20B1${order.totalPrice.toStringAsFixed(2)}',
+          '₱${order.totalPrice.toStringAsFixed(2)}',
           valueColor: AppColors.error,
         ));
       }
@@ -453,7 +449,7 @@ class _PickupInfoCard extends StatelessWidget {
           theme,
           Icons.check_circle_outline_rounded,
           'Completed at',
-          DateFormat('MMM d, y \u2022 h:mm a')
+          DateFormat('MMM d, y • h:mm a')
               .format(order.completedAt!.toDate().toLocal()),
         ));
       }
@@ -463,7 +459,7 @@ class _PickupInfoCard extends StatelessWidget {
         Icons.cancel_outlined,
         'Cancelled at',
         order.cancelledAt != null
-            ? DateFormat('MMM d, y \u2022 h:mm a')
+            ? DateFormat('MMM d, y • h:mm a')
                 .format(order.cancelledAt!.toDate().toLocal())
             : 'N/A',
       ));
@@ -542,13 +538,13 @@ class _PickupInfoCard extends StatelessWidget {
 // Action bar (sticky bottom)
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _ActionBar extends StatelessWidget {
+class _ActionBar extends ConsumerWidget {
   final OrderModel order;
 
   const _ActionBar({required this.order});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // No actions for completed or cancelled orders
     if (order.status == StatusConstants.completed ||
         order.status == StatusConstants.cancelled) {
@@ -572,15 +568,14 @@ class _ActionBar extends StatelessWidget {
             horizontal: AppTheme.spacing16,
             vertical: AppTheme.spacing8,
           ),
-          child: _buildActions(context),
+          child: _buildActions(context, ref),
         ),
       ),
     );
   }
 
-  Widget _buildActions(BuildContext context) {
-    final viewModel = context.watch<OrderViewModel>();
-    final isLoading = viewModel.isLoading;
+  Widget _buildActions(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(orderViewModelProvider).isLoading;
 
     switch (order.status) {
       case StatusConstants.pending:
@@ -590,7 +585,7 @@ class _ActionBar extends StatelessWidget {
               child: CustomButton.destructive(
                 text: 'Cancel Order',
                 isLoading: isLoading,
-                onPressed: () => _showCancelDialog(context, viewModel),
+                onPressed: () => _showCancelDialog(context, ref),
               ),
             ),
             const SizedBox(width: AppTheme.spacing12),
@@ -598,7 +593,7 @@ class _ActionBar extends StatelessWidget {
               child: CustomButton(
                 text: 'Approve Order',
                 isLoading: isLoading,
-                onPressed: () => _showApproveDialog(context, viewModel),
+                onPressed: () => _showApproveDialog(context, ref),
               ),
             ),
           ],
@@ -608,14 +603,14 @@ class _ActionBar extends StatelessWidget {
         return CustomButton(
           text: 'Mark as Ready',
           isLoading: isLoading,
-          onPressed: () => _handleFulfill(context, viewModel),
+          onPressed: () => _handleFulfill(context, ref),
         );
 
       case StatusConstants.ready:
         return CustomButton(
           text: 'Complete Order',
           isLoading: isLoading,
-          onPressed: () => _showCompleteDialog(context, viewModel),
+          onPressed: () => _showCompleteDialog(context, ref),
         );
 
       default:
@@ -625,7 +620,7 @@ class _ActionBar extends StatelessWidget {
 
   // ─── Dialogs and action handlers ──────────────────────────────────────
 
-  void _showCancelDialog(BuildContext context, OrderViewModel viewModel) {
+  void _showCancelDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -641,11 +636,14 @@ class _ActionBar extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              _handleCancel(context, viewModel);
+              _handleCancel(context, ref);
             },
             child: Text(
               'Yes, Cancel',
-              style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(color: AppColors.error),
+              style: Theme.of(dialogContext)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.error),
             ),
           ),
         ],
@@ -653,7 +651,7 @@ class _ActionBar extends StatelessWidget {
     );
   }
 
-  void _showApproveDialog(BuildContext context, OrderViewModel viewModel) {
+  void _showApproveDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -669,7 +667,7 @@ class _ActionBar extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              _handleApprove(context, viewModel);
+              _handleApprove(context, ref);
             },
             child: const Text('Approve'),
           ),
@@ -678,7 +676,7 @@ class _ActionBar extends StatelessWidget {
     );
   }
 
-  void _showCompleteDialog(BuildContext context, OrderViewModel viewModel) {
+  void _showCompleteDialog(BuildContext context, WidgetRef ref) {
     final message = order.isPaid
         ? 'Are you sure you want to complete this order?'
         : 'Confirming order means you have accepted the money from the buyer.';
@@ -696,7 +694,7 @@ class _ActionBar extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              _handleComplete(context, viewModel);
+              _handleComplete(context, ref);
             },
             child: const Text('Confirm'),
           ),
@@ -705,12 +703,9 @@ class _ActionBar extends StatelessWidget {
     );
   }
 
-  Future<void> _handleApprove(
-    BuildContext context,
-    OrderViewModel viewModel,
-  ) async {
+  Future<void> _handleApprove(BuildContext context, WidgetRef ref) async {
     try {
-      await viewModel.approveOrder();
+      await ref.read(orderViewModelProvider.notifier).approveOrder();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -731,12 +726,9 @@ class _ActionBar extends StatelessWidget {
     }
   }
 
-  Future<void> _handleCancel(
-    BuildContext context,
-    OrderViewModel viewModel,
-  ) async {
+  Future<void> _handleCancel(BuildContext context, WidgetRef ref) async {
     try {
-      await viewModel.cancelOrder();
+      await ref.read(orderViewModelProvider.notifier).cancelOrder();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -757,12 +749,9 @@ class _ActionBar extends StatelessWidget {
     }
   }
 
-  Future<void> _handleFulfill(
-    BuildContext context,
-    OrderViewModel viewModel,
-  ) async {
+  Future<void> _handleFulfill(BuildContext context, WidgetRef ref) async {
     try {
-      await viewModel.fulfillOrder();
+      await ref.read(orderViewModelProvider.notifier).fulfillOrder();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -783,12 +772,9 @@ class _ActionBar extends StatelessWidget {
     }
   }
 
-  Future<void> _handleComplete(
-    BuildContext context,
-    OrderViewModel viewModel,
-  ) async {
+  Future<void> _handleComplete(BuildContext context, WidgetRef ref) async {
     try {
-      await viewModel.completeOrder();
+      await ref.read(orderViewModelProvider.notifier).completeOrder();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

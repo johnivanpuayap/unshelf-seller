@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/order_card.dart';
@@ -8,14 +8,14 @@ import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/order_viewmodel.dart';
 import 'package:unshelf_seller/views/order_details_view.dart';
 
-class OrdersView extends StatefulWidget {
+class OrdersView extends ConsumerStatefulWidget {
   const OrdersView({super.key});
 
   @override
-  State<OrdersView> createState() => _OrdersViewState();
+  ConsumerState<OrdersView> createState() => _OrdersViewState();
 }
 
-class _OrdersViewState extends State<OrdersView> {
+class _OrdersViewState extends ConsumerState<OrdersView> {
   static const _statusFilters = [
     'All',
     'Pending',
@@ -29,7 +29,7 @@ class _OrdersViewState extends State<OrdersView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OrderViewModel>(context, listen: false).fetchOrders();
+      ref.read(orderViewModelProvider.notifier).fetchOrders();
     });
   }
 
@@ -52,150 +52,143 @@ class _OrdersViewState extends State<OrdersView> {
   // ─── Status filter chips ────────────────────────────────────────────────
 
   Widget _buildFilterChips(ThemeData theme) {
-    return Consumer<OrderViewModel>(
-      builder: (context, viewModel, _) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing12,
-            vertical: AppTheme.spacing8,
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _statusFilters.map((status) {
-                final isSelected = viewModel.currentStatus == status;
+    final state = ref.watch(orderViewModelProvider);
+    final notifier = ref.read(orderViewModelProvider.notifier);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing12,
+        vertical: AppTheme.spacing8,
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: _statusFilters.map((status) {
+            final isSelected = state.currentStatus == status;
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppTheme.spacing8),
-                  child: ChoiceChip(
-                    label: Text(status),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      viewModel.currentStatus = status;
-                      viewModel.filterOrdersByStatus(status);
-                    },
-                    selectedColor: AppColors.primaryColor,
-                    backgroundColor: AppColors.surface,
-                    labelStyle: theme.textTheme.labelLarge?.copyWith(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                    ),
-                    side: isSelected
-                        ? BorderSide.none
-                        : const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusFull),
-                    ),
-                    showCheckmark: false,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing12,
-                      vertical: AppTheme.spacing4,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        );
-      },
+            return Padding(
+              padding: const EdgeInsets.only(right: AppTheme.spacing8),
+              child: ChoiceChip(
+                label: Text(status),
+                selected: isSelected,
+                onSelected: (_) {
+                  notifier.currentStatus = status;
+                  notifier.filterOrdersByStatus(status);
+                },
+                selectedColor: AppColors.primaryColor,
+                backgroundColor: AppColors.surface,
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                ),
+                side: isSelected
+                    ? BorderSide.none
+                    : const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                ),
+                showCheckmark: false,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing12,
+                  vertical: AppTheme.spacing4,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
   // ─── Sort toggle ────────────────────────────────────────────────────────
 
   Widget _buildSortToggle(ThemeData theme) {
-    return Consumer<OrderViewModel>(
-      builder: (context, viewModel, _) {
-        final isLatestFirst = viewModel.sortOrder == 'Descending';
+    final state = ref.watch(orderViewModelProvider);
+    final notifier = ref.read(orderViewModelProvider.notifier);
+    final isLatestFirst = state.sortOrder == 'Descending';
 
-        return SizedBox(
-          height: AppTheme.minTouchTarget,
-          child: InkWell(
-            onTap: () {
-              viewModel.sortOrder = isLatestFirst ? 'Ascending' : 'Descending';
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spacing16,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isLatestFirst
-                        ? Icons.arrow_downward_rounded
-                        : Icons.arrow_upward_rounded,
-                    size: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                  const SizedBox(width: AppTheme.spacing4),
-                  Text(
-                    isLatestFirst ? 'Latest first' : 'Oldest first',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    return SizedBox(
+      height: AppTheme.minTouchTarget,
+      child: InkWell(
+        onTap: () {
+          notifier.sortOrder = isLatestFirst ? 'Ascending' : 'Descending';
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing16,
           ),
-        );
-      },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isLatestFirst
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: AppTheme.spacing4),
+              Text(
+                isLatestFirst ? 'Latest first' : 'Oldest first',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   // ─── Order list ─────────────────────────────────────────────────────────
 
   Widget _buildOrderList(ThemeData theme) {
-    return Consumer<OrderViewModel>(
-      builder: (context, viewModel, _) {
-        if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final state = ref.watch(orderViewModelProvider);
+    final notifier = ref.read(orderViewModelProvider.notifier);
 
-        final orders = viewModel.filteredOrders;
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        if (orders.isEmpty) {
-          return _buildEmptyState(viewModel.currentStatus);
-        }
+    final orders = state.filteredOrders;
 
-        return RefreshIndicator(
-          color: AppColors.primaryColor,
-          onRefresh: viewModel.fetchOrders,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing16,
-              vertical: AppTheme.spacing8,
-            ),
-            itemCount: orders.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: AppTheme.spacing4),
-            itemBuilder: (context, index) {
-              final order = orders[index];
+    if (orders.isEmpty) {
+      return _buildEmptyState(state.currentStatus);
+    }
 
-              return OrderCard(
-                orderId: order.orderId,
-                buyerName: order.buyerName,
-                status: order.status,
-                totalPrice: order.totalPrice,
-                createdAt: order.createdAt.toDate().toLocal(),
-                itemCount: order.items.length,
-                onTap: () {
-                  viewModel.selectOrder(order.id);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => OrderDetailsView(orderId: order.id),
-                    ),
-                  );
-                },
+    return RefreshIndicator(
+      color: AppColors.primaryColor,
+      onRefresh: notifier.fetchOrders,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing16,
+          vertical: AppTheme.spacing8,
+        ),
+        itemCount: orders.length,
+        separatorBuilder: (_, __) => const SizedBox(height: AppTheme.spacing4),
+        itemBuilder: (context, index) {
+          final order = orders[index];
+
+          return OrderCard(
+            orderId: order.orderId,
+            buyerName: order.buyerName,
+            status: order.status,
+            totalPrice: order.totalPrice,
+            createdAt: order.createdAt.toDate().toLocal(),
+            itemCount: order.items.length,
+            onTap: () {
+              notifier.selectOrder(order.id);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => OrderDetailsView(orderId: order.id),
+                ),
               );
             },
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

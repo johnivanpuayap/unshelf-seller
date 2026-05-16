@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/order_card.dart';
@@ -17,42 +17,43 @@ import 'package:unshelf_seller/views/order_details_view.dart';
 import 'package:unshelf_seller/views/orders_view.dart';
 import 'package:unshelf_seller/views/store_analytics_view.dart';
 
-class DashboardView extends StatefulWidget {
+class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
 
   @override
-  State<DashboardView> createState() => _DashboardViewState();
+  ConsumerState<DashboardView> createState() => _DashboardViewState();
 }
 
-class _DashboardViewState extends State<DashboardView> {
+class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DashboardViewModel>(context, listen: false)
-          .fetchDashboardData();
-      Provider.of<OrderViewModel>(context, listen: false).fetchOrders();
-      Provider.of<StoreViewModel>(context, listen: false).fetchStoreDetails();
+      ref.read(dashboardViewModelProvider.notifier).fetchDashboardData();
+      ref.read(orderViewModelProvider.notifier).fetchOrders();
+      ref.read(storeViewModelProvider.notifier).fetchStoreDetails();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dashboardVM = context.watch<DashboardViewModel>();
-    final orderVM = context.watch<OrderViewModel>();
-    final storeVM = context.watch<StoreViewModel>();
+    final dashboardState = ref.watch(dashboardViewModelProvider);
+    final orderState = ref.watch(orderViewModelProvider);
+    final storeVM = ref.watch(storeViewModelProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: dashboardVM.isLoading
+      body: dashboardState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               color: AppColors.primaryColor,
               onRefresh: () async {
                 await Future.wait([
-                  dashboardVM.fetchDashboardData(),
-                  orderVM.fetchOrders(),
+                  ref
+                      .read(dashboardViewModelProvider.notifier)
+                      .fetchDashboardData(),
+                  ref.read(orderViewModelProvider.notifier).fetchOrders(),
                 ]);
               },
               child: SingleChildScrollView(
@@ -66,11 +67,11 @@ class _DashboardViewState extends State<DashboardView> {
                     const SizedBox(height: AppTheme.spacing24),
 
                     // --- KPI Stats Grid ---
-                    _buildKpiGrid(theme, dashboardVM),
+                    _buildKpiGrid(theme, dashboardState),
                     const SizedBox(height: AppTheme.spacing32),
 
                     // --- Recent Orders ---
-                    _buildRecentOrdersSection(theme, orderVM),
+                    _buildRecentOrdersSection(theme, orderState),
                     const SizedBox(height: AppTheme.spacing32),
 
                     // --- Quick Actions ---
@@ -84,7 +85,7 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   // ─── Welcome greeting ───
-  Widget _buildWelcomeSection(ThemeData theme, StoreViewModel storeVM) {
+  Widget _buildWelcomeSection(ThemeData theme, StoreState storeVM) {
     final storeName = storeVM.storeDetails?.storeName ?? 'Seller';
     final greeting = _getGreeting();
     final today = DateFormat('EEEE, MMMM d').format(DateTime.now());
@@ -112,11 +113,11 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   // ─── KPI 2x2 grid ───
-  Widget _buildKpiGrid(ThemeData theme, DashboardViewModel vm) {
+  Widget _buildKpiGrid(ThemeData theme, DashboardState state) {
     final earningsFormatted = NumberFormat.currency(
       symbol: '\u20B1',
       decimalDigits: 2,
-    ).format(vm.totalSales);
+    ).format(state.totalSales);
 
     return Column(
       children: [
@@ -125,7 +126,7 @@ class _DashboardViewState extends State<DashboardView> {
             Expanded(
               child: StatCard(
                 label: "Today's Orders",
-                value: vm.totalOrders.toString(),
+                value: state.totalOrders.toString(),
                 icon: Icons.shopping_bag_outlined,
               ),
             ),
@@ -133,7 +134,7 @@ class _DashboardViewState extends State<DashboardView> {
             Expanded(
               child: StatCard(
                 label: 'Pending',
-                value: vm.pendingOrders.toString(),
+                value: state.pendingOrders.toString(),
                 icon: Icons.pending_actions_outlined,
                 iconColor: AppColors.statusPendingText,
               ),
@@ -154,7 +155,7 @@ class _DashboardViewState extends State<DashboardView> {
             Expanded(
               child: StatCard(
                 label: 'Completed',
-                value: vm.completedOrders.toString(),
+                value: state.completedOrders.toString(),
                 icon: Icons.check_circle_outline,
                 iconColor: AppColors.success,
               ),
@@ -166,9 +167,9 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   // ─── Recent orders section ───
-  Widget _buildRecentOrdersSection(ThemeData theme, OrderViewModel orderVM) {
+  Widget _buildRecentOrdersSection(ThemeData theme, OrderState orderState) {
     // Take the latest 5 orders sorted by date descending
-    final recentOrders = orderVM.orders.toList()
+    final recentOrders = orderState.orders.toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final displayOrders = recentOrders.take(5).toList();
 
@@ -187,7 +188,7 @@ class _DashboardViewState extends State<DashboardView> {
             );
           },
         ),
-        if (orderVM.isLoading)
+        if (orderState.isLoading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: AppTheme.spacing24),
             child: Center(

@@ -1,96 +1,205 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:unshelf_seller/core/base_viewmodel.dart';
-import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
-import 'package:unshelf_seller/core/logger.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:unshelf_seller/core/constants/status_constants.dart';
-import 'package:unshelf_seller/core/service_locator.dart';
+import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 
-class AnalyticsViewModel extends BaseViewModel {
-  final IAnalyticsService _analyticsService;
+part 'analytics_viewmodel.g.dart';
 
-  int totalOrders = 0;
-  double totalSales = 0.0;
-  int totalCompletedOrders = 0;
-  int totalReadyOrders = 0;
-  int totalPendingOrders = 0;
+/// Immutable state for the store analytics screen.
+///
+/// The maps are emitted by-value via `copyWith` after batch population; the
+/// internal helpers mutate locally-scoped maps before assigning the final
+/// state object.
+class AnalyticsState {
+  final bool isLoading;
+  final String? errorMessage;
 
-  final Map<DateTime, int> _dailyOrdersMap = {};
-  Map<DateTime, int> get dailyOrdersMap => _dailyOrdersMap;
-  final Map<DateTime, int> _weeklyOrdersMap = {};
-  Map<DateTime, int> get weeklyOrdersMap => _weeklyOrdersMap;
-  final Map<DateTime, int> _monthlyOrdersMap = {};
-  Map<DateTime, int> get monthlyOrdersMap => _monthlyOrdersMap;
-  final Map<DateTime, int> _annualOrdersMap = {};
-  Map<DateTime, int> get annualOrdersMap => _annualOrdersMap;
+  final int totalOrders;
+  final double totalSales;
+  final int totalCompletedOrders;
+  final int totalReadyOrders;
+  final int totalPendingOrders;
 
-  double _dailyMaxYOrder = 0.0;
-  double get dailyMaxYOrder => _dailyMaxYOrder;
-  double _weeklyMaxYOrder = 0.0;
-  double get weeklyMaxYOrder => _weeklyMaxYOrder;
-  double _monthlyMaxYOrder = 0.0;
-  double get monthlyMaxYOrder => _monthlyMaxYOrder;
-  double _annualMaxYOrder = 0.0;
-  double get annualMaxYOrder => _annualMaxYOrder;
+  final Map<DateTime, int> dailyOrdersMap;
+  final Map<DateTime, int> weeklyOrdersMap;
+  final Map<DateTime, int> monthlyOrdersMap;
+  final Map<DateTime, int> annualOrdersMap;
 
-  final Map<DateTime, double> _dailySalesMap = {};
-  Map<DateTime, double> get dailySalesMap => _dailySalesMap;
-  final Map<DateTime, double> _weeklySalesMap = {};
-  Map<DateTime, double> get weeklySalesMap => _weeklySalesMap;
-  final Map<DateTime, double> _monthlySalesMap = {};
-  Map<DateTime, double> get monthlySalesMap => _monthlySalesMap;
-  final Map<DateTime, double> _annualSalesMap = {};
-  Map<DateTime, double> get annualSalesMap => _annualSalesMap;
+  final double dailyMaxYOrder;
+  final double weeklyMaxYOrder;
+  final double monthlyMaxYOrder;
+  final double annualMaxYOrder;
 
-  double _dailyMaxYSales = 0.0;
-  double get dailyMaxYSales => _dailyMaxYSales;
-  double _weeklyMaxYSales = 0.0;
-  double get weeklyMaxYSales => _weeklyMaxYSales;
-  double _monthlyMaxYSales = 0.0;
-  double get monthlyMaxYSales => _monthlyMaxYSales;
-  double _annualMaxYSales = 0.0;
-  double get annualMaxYSales => _annualMaxYSales;
+  final Map<DateTime, double> dailySalesMap;
+  final Map<DateTime, double> weeklySalesMap;
+  final Map<DateTime, double> monthlySalesMap;
+  final Map<DateTime, double> annualSalesMap;
 
-  List<Map<String, dynamic>> topProducts = [];
+  final double dailyMaxYSales;
+  final double weeklyMaxYSales;
+  final double monthlyMaxYSales;
+  final double annualMaxYSales;
 
-  AnalyticsViewModel({IAnalyticsService? analyticsService})
-      : _analyticsService =
-            analyticsService ?? locator<IAnalyticsService>();
+  const AnalyticsState({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.totalOrders,
+    required this.totalSales,
+    required this.totalCompletedOrders,
+    required this.totalReadyOrders,
+    required this.totalPendingOrders,
+    required this.dailyOrdersMap,
+    required this.weeklyOrdersMap,
+    required this.monthlyOrdersMap,
+    required this.annualOrdersMap,
+    required this.dailyMaxYOrder,
+    required this.weeklyMaxYOrder,
+    required this.monthlyMaxYOrder,
+    required this.annualMaxYOrder,
+    required this.dailySalesMap,
+    required this.weeklySalesMap,
+    required this.monthlySalesMap,
+    required this.annualSalesMap,
+    required this.dailyMaxYSales,
+    required this.weeklyMaxYSales,
+    required this.monthlyMaxYSales,
+    required this.annualMaxYSales,
+  });
+
+  factory AnalyticsState.initial() => const AnalyticsState(
+        isLoading: false,
+        errorMessage: null,
+        totalOrders: 0,
+        totalSales: 0.0,
+        totalCompletedOrders: 0,
+        totalReadyOrders: 0,
+        totalPendingOrders: 0,
+        dailyOrdersMap: <DateTime, int>{},
+        weeklyOrdersMap: <DateTime, int>{},
+        monthlyOrdersMap: <DateTime, int>{},
+        annualOrdersMap: <DateTime, int>{},
+        dailyMaxYOrder: 0.0,
+        weeklyMaxYOrder: 0.0,
+        monthlyMaxYOrder: 0.0,
+        annualMaxYOrder: 0.0,
+        dailySalesMap: <DateTime, double>{},
+        weeklySalesMap: <DateTime, double>{},
+        monthlySalesMap: <DateTime, double>{},
+        annualSalesMap: <DateTime, double>{},
+        dailyMaxYSales: 0.0,
+        weeklyMaxYSales: 0.0,
+        monthlyMaxYSales: 0.0,
+        annualMaxYSales: 0.0,
+      );
+
+  AnalyticsState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    int? totalOrders,
+    double? totalSales,
+    int? totalCompletedOrders,
+    int? totalReadyOrders,
+    int? totalPendingOrders,
+    Map<DateTime, int>? dailyOrdersMap,
+    Map<DateTime, int>? weeklyOrdersMap,
+    Map<DateTime, int>? monthlyOrdersMap,
+    Map<DateTime, int>? annualOrdersMap,
+    double? dailyMaxYOrder,
+    double? weeklyMaxYOrder,
+    double? monthlyMaxYOrder,
+    double? annualMaxYOrder,
+    Map<DateTime, double>? dailySalesMap,
+    Map<DateTime, double>? weeklySalesMap,
+    Map<DateTime, double>? monthlySalesMap,
+    Map<DateTime, double>? annualSalesMap,
+    double? dailyMaxYSales,
+    double? weeklyMaxYSales,
+    double? monthlyMaxYSales,
+    double? annualMaxYSales,
+  }) {
+    return AnalyticsState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
+      totalOrders: totalOrders ?? this.totalOrders,
+      totalSales: totalSales ?? this.totalSales,
+      totalCompletedOrders: totalCompletedOrders ?? this.totalCompletedOrders,
+      totalReadyOrders: totalReadyOrders ?? this.totalReadyOrders,
+      totalPendingOrders: totalPendingOrders ?? this.totalPendingOrders,
+      dailyOrdersMap: dailyOrdersMap ?? this.dailyOrdersMap,
+      weeklyOrdersMap: weeklyOrdersMap ?? this.weeklyOrdersMap,
+      monthlyOrdersMap: monthlyOrdersMap ?? this.monthlyOrdersMap,
+      annualOrdersMap: annualOrdersMap ?? this.annualOrdersMap,
+      dailyMaxYOrder: dailyMaxYOrder ?? this.dailyMaxYOrder,
+      weeklyMaxYOrder: weeklyMaxYOrder ?? this.weeklyMaxYOrder,
+      monthlyMaxYOrder: monthlyMaxYOrder ?? this.monthlyMaxYOrder,
+      annualMaxYOrder: annualMaxYOrder ?? this.annualMaxYOrder,
+      dailySalesMap: dailySalesMap ?? this.dailySalesMap,
+      weeklySalesMap: weeklySalesMap ?? this.weeklySalesMap,
+      monthlySalesMap: monthlySalesMap ?? this.monthlySalesMap,
+      annualSalesMap: annualSalesMap ?? this.annualSalesMap,
+      dailyMaxYSales: dailyMaxYSales ?? this.dailyMaxYSales,
+      weeklyMaxYSales: weeklyMaxYSales ?? this.weeklyMaxYSales,
+      monthlyMaxYSales: monthlyMaxYSales ?? this.monthlyMaxYSales,
+      annualMaxYSales: annualMaxYSales ?? this.annualMaxYSales,
+    );
+  }
+
+  static const _sentinel = Object();
+}
+
+/// Store analytics ViewModel — fetches lifetime totals plus per-period
+/// (Daily / Weekly / Monthly / Annual) maps of orders and sales for chart
+/// rendering.
+@riverpod
+class AnalyticsViewModel extends _$AnalyticsViewModel {
+  @override
+  AnalyticsState build() => AnalyticsState.initial();
 
   Future<void> fetchAnalyticsData() async {
-    await runBusyFuture(() async {
-      await getTotals();
-      await getOrdersandSalesData();
-    });
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _getTotals();
+      await _getOrdersAndSalesData();
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in AnalyticsViewModel: $e', e, stackTrace);
+      state = state.copyWith(errorMessage: e.toString());
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
   }
 
-  Future<void> getOrdersandSalesData() async {
-    await getOrdersMap('Daily');
-    await getOrdersMap('Weekly');
-    await getOrdersMap('Monthly');
-    await getOrdersMap('Annual');
+  Future<void> _getOrdersAndSalesData() async {
+    await _getOrdersMap('Daily');
+    await _getOrdersMap('Weekly');
+    await _getOrdersMap('Monthly');
+    await _getOrdersMap('Annual');
 
-    await getSalesMap('Daily');
-    await getSalesMap('Weekly');
-    await getSalesMap('Monthly');
-    await getSalesMap('Annual');
+    await _getSalesMap('Daily');
+    await _getSalesMap('Weekly');
+    await _getSalesMap('Monthly');
+    await _getSalesMap('Annual');
 
-    AppLogger.debug('Weekly Orders: $_weeklyOrdersMap');
-    AppLogger.debug('Weekly Sales: $_weeklySalesMap');
+    AppLogger.debug('Weekly Orders: ${state.weeklyOrdersMap}');
+    AppLogger.debug('Weekly Sales: ${state.weeklySalesMap}');
   }
 
-  Future<void> getTotals() async {
-    totalOrders = 0;
-    totalSales = 0.0;
-    totalCompletedOrders = 0;
-    totalReadyOrders = 0;
-    totalPendingOrders = 0;
+  Future<void> _getTotals() async {
+    int totalOrders = 0;
+    double totalSales = 0.0;
+    int totalCompletedOrders = 0;
+    int totalReadyOrders = 0;
+    int totalPendingOrders = 0;
 
-    final orderDocs = await _analyticsService.fetchOrders();
+    final orderDocs = await ref.read(analyticsServiceProvider).fetchOrders();
 
     for (var doc in orderDocs) {
       totalOrders++;
 
-      String status = doc['status'] as String;
+      final String status = doc['status'] as String;
       if (status == StatusConstants.completed) {
         totalCompletedOrders++;
       } else if (status == StatusConstants.ready) {
@@ -100,7 +209,8 @@ class AnalyticsViewModel extends BaseViewModel {
       }
     }
 
-    final transDocs = await _analyticsService.fetchTransactions();
+    final transDocs =
+        await ref.read(analyticsServiceProvider).fetchTransactions();
 
     for (var transDoc in transDocs) {
       if (transDoc['type'] == StatusConstants.sale) {
@@ -108,49 +218,99 @@ class AnalyticsViewModel extends BaseViewModel {
         totalSales += transAmount;
       }
     }
+
+    state = state.copyWith(
+      totalOrders: totalOrders,
+      totalSales: totalSales,
+      totalCompletedOrders: totalCompletedOrders,
+      totalReadyOrders: totalReadyOrders,
+      totalPendingOrders: totalPendingOrders,
+    );
   }
 
-  Future<void> getOrdersMap(String period) async {
-    DateTime today = DateTime.now();
-    _initializeOrdersMap(period, today);
+  Future<void> _getOrdersMap(String period) async {
+    final DateTime today = DateTime.now();
+    final Map<DateTime, int> ordersMap = _initializeOrdersMap(period, today);
 
     final startDate = _getStartDate(period, today);
-    final orderDocs = await _analyticsService.fetchOrders(since: startDate);
+    final orderDocs = await ref
+        .read(analyticsServiceProvider)
+        .fetchOrders(since: startDate);
 
     for (var orderDoc in orderDocs) {
-      DateTime orderDate = (orderDoc['createdAt'] as Timestamp).toDate();
-      _updateOrdersMap(period, orderDate);
+      final DateTime orderDate = (orderDoc['createdAt'] as Timestamp).toDate();
+      _updateOrdersMap(period, orderDate, ordersMap);
     }
 
-    _calculateMaxYOrder(period);
+    final double maxY = _calculateMaxYOrder(ordersMap);
+
+    switch (period) {
+      case 'Daily':
+        state =
+            state.copyWith(dailyOrdersMap: ordersMap, dailyMaxYOrder: maxY);
+        break;
+      case 'Weekly':
+        state =
+            state.copyWith(weeklyOrdersMap: ordersMap, weeklyMaxYOrder: maxY);
+        break;
+      case 'Monthly':
+        state = state.copyWith(
+            monthlyOrdersMap: ordersMap, monthlyMaxYOrder: maxY);
+        break;
+      case 'Annual':
+        state =
+            state.copyWith(annualOrdersMap: ordersMap, annualMaxYOrder: maxY);
+        break;
+    }
   }
 
-  Future<void> getSalesMap(String period) async {
-    DateTime today = DateTime.now();
-    _initializeSalesMap(period, today);
+  Future<void> _getSalesMap(String period) async {
+    final DateTime today = DateTime.now();
+    final Map<DateTime, double> salesMap = _initializeSalesMap(period, today);
 
     final startDate = _getStartDate(period, today);
-    final transDocs =
-        await _analyticsService.fetchTransactions(since: startDate);
+    final transDocs = await ref
+        .read(analyticsServiceProvider)
+        .fetchTransactions(since: startDate);
 
     for (var transDoc in transDocs) {
       if (transDoc['type'] == StatusConstants.sale) {
-        DateTime transDate = (transDoc['date'] as Timestamp).toDate();
-        double transAmount = (transDoc['sellerEarnings'] ?? 0).toDouble();
-        _updateSalesMap(period, transDate, transAmount);
+        final DateTime transDate = (transDoc['date'] as Timestamp).toDate();
+        final double transAmount = (transDoc['sellerEarnings'] ?? 0).toDouble();
+        _updateSalesMap(period, transDate, transAmount, salesMap);
       }
     }
 
-    _calculateMaxYSales(period);
+    final double maxY = _calculateMaxYSales(salesMap);
+
+    switch (period) {
+      case 'Daily':
+        state =
+            state.copyWith(dailySalesMap: salesMap, dailyMaxYSales: maxY);
+        break;
+      case 'Weekly':
+        state =
+            state.copyWith(weeklySalesMap: salesMap, weeklyMaxYSales: maxY);
+        break;
+      case 'Monthly':
+        state =
+            state.copyWith(monthlySalesMap: salesMap, monthlyMaxYSales: maxY);
+        break;
+      case 'Annual':
+        state =
+            state.copyWith(annualSalesMap: salesMap, annualMaxYSales: maxY);
+        break;
+    }
   }
 
-  void _initializeOrdersMap(String period, DateTime today) {
+  Map<DateTime, int> _initializeOrdersMap(String period, DateTime today) {
+    final Map<DateTime, int> map = {};
     switch (period) {
       case 'Daily':
         for (int i = 0; i < 14; i++) {
           DateTime date = today.subtract(Duration(days: i));
           DateTime saveDate = DateTime(date.year, date.month, date.day);
-          _dailyOrdersMap[saveDate] = 0;
+          map[saveDate] = 0;
         }
         break;
       case 'Weekly':
@@ -162,7 +322,7 @@ class AnalyticsViewModel extends BaseViewModel {
           weekStartDate = DateTime(
               weekStartDate.year, weekStartDate.month, weekStartDate.day);
 
-          _weeklyOrdersMap[weekStartDate] = 0;
+          map[weekStartDate] = 0;
         }
         break;
       case 'Monthly':
@@ -176,13 +336,13 @@ class AnalyticsViewModel extends BaseViewModel {
           }
 
           DateTime monthDate = DateTime(year, month, 1);
-          _monthlyOrdersMap[monthDate] = 0;
+          map[monthDate] = 0;
         }
         break;
       case 'Annual':
         for (int i = 2; i >= 0; i--) {
           DateTime yearDate = DateTime(today.year - i, 1, 1);
-          _annualOrdersMap[yearDate] = 0;
+          map[yearDate] = 0;
         }
         break;
 
@@ -190,15 +350,17 @@ class AnalyticsViewModel extends BaseViewModel {
         AppLogger.warning('Invalid time period');
         break;
     }
+    return map;
   }
 
-  void _initializeSalesMap(String period, DateTime today) {
+  Map<DateTime, double> _initializeSalesMap(String period, DateTime today) {
+    final Map<DateTime, double> map = {};
     switch (period) {
       case 'Daily':
         for (int i = 0; i < 14; i++) {
           DateTime date = today.subtract(Duration(days: i));
           DateTime saveDate = DateTime(date.year, date.month, date.day);
-          _dailySalesMap[saveDate] = 0.0;
+          map[saveDate] = 0.0;
         }
         break;
       case 'Weekly':
@@ -209,7 +371,7 @@ class AnalyticsViewModel extends BaseViewModel {
 
           weekStartDate = DateTime(
               weekStartDate.year, weekStartDate.month, weekStartDate.day);
-          _weeklySalesMap[weekStartDate] = 0;
+          map[weekStartDate] = 0;
         }
         break;
       case 'Monthly':
@@ -223,30 +385,32 @@ class AnalyticsViewModel extends BaseViewModel {
           }
 
           DateTime monthDate = DateTime(year, month, 1);
-          _monthlySalesMap[monthDate] = 0.0;
+          map[monthDate] = 0.0;
         }
         break;
       case 'Annual':
         for (int i = 2; i >= 0; i--) {
           // Start from the oldest year and move forward
           DateTime yearDate = DateTime(today.year - i, 1, 1);
-          _annualSalesMap[yearDate] = 0.0; // Initialize sales as 0.0
+          map[yearDate] = 0.0;
         }
         break;
       default:
         break;
     }
+    return map;
   }
 
-  void _updateOrdersMap(String period, DateTime orderDate) {
+  void _updateOrdersMap(
+      String period, DateTime orderDate, Map<DateTime, int> map) {
     DateTime key;
 
     switch (period) {
       case 'Daily':
         key = DateTime(orderDate.year, orderDate.month, orderDate.day);
 
-        if (_dailyOrdersMap.containsKey(key)) {
-          _dailyOrdersMap[key] = (_dailyOrdersMap[key] ?? 0) + 1;
+        if (map.containsKey(key)) {
+          map[key] = (map[key] ?? 0) + 1;
         }
 
         break;
@@ -259,22 +423,22 @@ class AnalyticsViewModel extends BaseViewModel {
 
         key = DateTime(key.year, key.month, key.day);
 
-        _weeklyOrdersMap[key] = (_weeklyOrdersMap[key] ?? 0) + 1;
+        map[key] = (map[key] ?? 0) + 1;
 
         break;
       case 'Monthly':
         key = DateTime(orderDate.year, orderDate.month, 1);
 
-        if (_monthlyOrdersMap.containsKey(key)) {
-          _monthlyOrdersMap[key] = (_monthlyOrdersMap[key] ?? 0) + 1;
+        if (map.containsKey(key)) {
+          map[key] = (map[key] ?? 0) + 1;
         }
 
         break;
       case 'Annual':
         key = DateTime(orderDate.year, 1, 1);
 
-        if (_annualOrdersMap.containsKey(key)) {
-          _annualOrdersMap[key] = (_annualOrdersMap[key] ?? 0) + 1;
+        if (map.containsKey(key)) {
+          map[key] = (map[key] ?? 0) + 1;
         }
 
         break;
@@ -283,15 +447,16 @@ class AnalyticsViewModel extends BaseViewModel {
     }
   }
 
-  void _updateSalesMap(String period, DateTime saleDate, double saleAmount) {
+  void _updateSalesMap(String period, DateTime saleDate, double saleAmount,
+      Map<DateTime, double> map) {
     DateTime key;
 
     switch (period) {
       case 'Daily':
         key = DateTime(saleDate.year, saleDate.month, saleDate.day);
 
-        if (_dailySalesMap.containsKey(key)) {
-          _dailySalesMap[key] = (_dailySalesMap[key] ?? 0.0) + saleAmount;
+        if (map.containsKey(key)) {
+          map[key] = (map[key] ?? 0.0) + saleAmount;
         }
 
         break;
@@ -304,22 +469,22 @@ class AnalyticsViewModel extends BaseViewModel {
 
         key = DateTime(key.year, key.month, key.day);
 
-        _weeklySalesMap[key] = (_weeklySalesMap[key] ?? 0.0) + saleAmount;
+        map[key] = (map[key] ?? 0.0) + saleAmount;
 
         break;
       case 'Monthly':
         key = DateTime(saleDate.year, saleDate.month, 1);
 
-        if (_monthlySalesMap.containsKey(key)) {
-          _monthlySalesMap[key] = (_monthlySalesMap[key] ?? 0.0) + saleAmount;
+        if (map.containsKey(key)) {
+          map[key] = (map[key] ?? 0.0) + saleAmount;
         }
 
         break;
       case 'Annual':
         key = DateTime(saleDate.year, 1, 1);
 
-        if (_annualSalesMap.containsKey(key)) {
-          _annualSalesMap[key] = (_annualSalesMap[key] ?? 0.0) + saleAmount;
+        if (map.containsKey(key)) {
+          map[key] = (map[key] ?? 0.0) + saleAmount;
         }
 
         break;
@@ -328,89 +493,18 @@ class AnalyticsViewModel extends BaseViewModel {
     }
   }
 
-  void _calculateMaxYOrder(String period) {
-    switch (period) {
-      case 'Daily':
-        if (_dailyOrdersMap.isEmpty) {
-          _dailyMaxYOrder = 0.0;
-        } else {
-          int maxOrderCount =
-              _dailyOrdersMap.values.reduce((a, b) => a > b ? a : b);
-          _dailyMaxYOrder = maxOrderCount.toDouble();
-        }
-        break;
-
-      case 'Weekly':
-        if (_weeklyOrdersMap.isEmpty) {
-          _weeklyMaxYOrder = 0.0;
-        } else {
-          int maxOrderCount =
-              _weeklyOrdersMap.values.reduce((a, b) => a > b ? a : b);
-          _weeklyMaxYOrder = maxOrderCount.toDouble();
-        }
-        break;
-
-      case 'Monthly':
-        if (_monthlyOrdersMap.isEmpty) {
-          _monthlyMaxYOrder = 0.0;
-        } else {
-          int maxOrderCount =
-              _monthlyOrdersMap.values.reduce((a, b) => a > b ? a : b);
-          _monthlyMaxYOrder = maxOrderCount.toDouble();
-        }
-        break;
-
-      case 'Annual':
-        if (_annualOrdersMap.isEmpty) {
-          _annualMaxYOrder = 0.0;
-        } else {
-          int maxOrderCount =
-              _annualOrdersMap.values.reduce((a, b) => a > b ? a : b);
-          _annualMaxYOrder = maxOrderCount.toDouble();
-        }
-        break;
-    }
+  double _calculateMaxYOrder(Map<DateTime, int> map) {
+    if (map.isEmpty) return 0.0;
+    final int maxOrderCount =
+        map.values.reduce((a, b) => a > b ? a : b);
+    return maxOrderCount.toDouble();
   }
 
-  void _calculateMaxYSales(String period) {
-    switch (period) {
-      case 'Daily':
-        if (_dailySalesMap.isEmpty) {
-          _dailyMaxYSales = 0.0;
-        } else {
-          double maxSalesAmount =
-              _dailySalesMap.values.reduce((a, b) => a > b ? a : b);
-          _dailyMaxYSales = maxSalesAmount.ceil().toDouble();
-        }
-        break;
-      case 'Weekly':
-        if (_weeklySalesMap.isEmpty) {
-          _weeklyMaxYSales = 0.0;
-        } else {
-          double maxSalesAmount =
-              _weeklySalesMap.values.reduce((a, b) => a > b ? a : b);
-          _weeklyMaxYSales = maxSalesAmount.ceil().toDouble();
-        }
-        break;
-      case 'Monthly':
-        if (_monthlySalesMap.isEmpty) {
-          _monthlyMaxYSales = 0.0;
-        } else {
-          double maxSalesAmount =
-              _monthlySalesMap.values.reduce((a, b) => a > b ? a : b);
-          _monthlyMaxYSales = maxSalesAmount.ceil().toDouble();
-        }
-        break;
-      case 'Annual':
-        if (_annualSalesMap.isEmpty) {
-          _annualMaxYSales = 0.0;
-        } else {
-          double maxSalesAmount =
-              _annualSalesMap.values.reduce((a, b) => a > b ? a : b);
-          _annualMaxYSales = maxSalesAmount.ceil().toDouble();
-        }
-        break;
-    }
+  double _calculateMaxYSales(Map<DateTime, double> map) {
+    if (map.isEmpty) return 0.0;
+    final double maxSalesAmount =
+        map.values.reduce((a, b) => a > b ? a : b);
+    return maxSalesAmount.ceil().toDouble();
   }
 
   DateTime _getStartDate(String period, DateTime today) {

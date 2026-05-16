@@ -1,46 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:unshelf_seller/components/custom_app_bar.dart';
-import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
-import 'package:unshelf_seller/views/add_bundle_view.dart';
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class SelectProductsView extends StatefulWidget {
+import 'package:unshelf_seller/components/custom_app_bar.dart';
+import 'package:unshelf_seller/utils/colors.dart';
+import 'package:unshelf_seller/utils/theme.dart';
+import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
+import 'package:unshelf_seller/views/add_bundle_view.dart';
+
+class SelectProductsView extends ConsumerStatefulWidget {
   const SelectProductsView({super.key});
 
   @override
-  State<SelectProductsView> createState() => _SelectProductsViewState();
+  ConsumerState<SelectProductsView> createState() =>
+      _SelectProductsViewState();
 }
 
-class _SelectProductsViewState extends State<SelectProductsView> {
+class _SelectProductsViewState extends ConsumerState<SelectProductsView> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SelectProductsViewModel>(context, listen: false)
-          .fetchAllBatches();
+      ref.read(selectProductsViewModelProvider.notifier).fetchAllBatches();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _onSearchChanged() {
     final searchQuery = _searchController.text;
-    Provider.of<SelectProductsViewModel>(context, listen: false)
+    ref
+        .read(selectProductsViewModelProvider.notifier)
         .updateSearchQuery(searchQuery);
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<SelectProductsViewModel>(context);
+    final viewModel = ref.watch(selectProductsViewModelProvider);
+    final notifier = ref.read(selectProductsViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Select Products for Bundle',
         onBackPressed: () {
-          viewModel.clearSelection();
+          notifier.clearSelection();
           Navigator.pop(context);
         },
       ),
@@ -98,7 +107,7 @@ class _SelectProductsViewState extends State<SelectProductsView> {
                           ],
                           onChanged: (value) {
                             if (value != null) {
-                              viewModel.sortItems(value);
+                              notifier.sortItems(value);
                             }
                           },
                         ),
@@ -112,8 +121,8 @@ class _SelectProductsViewState extends State<SelectProductsView> {
                 ),
                 // Product List
                 Expanded(
-                  child: Consumer<SelectProductsViewModel>(
-                    builder: (context, viewModel, child) {
+                  child: Builder(
+                    builder: (context) {
                       if (viewModel.isLoading) {
                         return const Center(
                           child: CircularProgressIndicator(),
@@ -140,9 +149,9 @@ class _SelectProductsViewState extends State<SelectProductsView> {
                               expiryDate: batch.expiryDate,
                               isSelected: viewModel.selectedItems.keys
                                   .contains(batch.batchNumber),
-                              onTap: () => viewModel
+                              onTap: () => notifier
                                   .addProductToBundle(batch.batchNumber),
-                              onLongPress: () => viewModel
+                              onLongPress: () => notifier
                                   .removeProductFromBundle(batch.batchNumber),
                             );
                           },
@@ -172,7 +181,8 @@ class _SelectProductsViewState extends State<SelectProductsView> {
             ),
           ).then((result) {
             if (result == true) {
-              viewModel.clearSelection();
+              notifier.clearSelection();
+              if (!context.mounted) return;
               Navigator.pop(context, true);
             }
           });

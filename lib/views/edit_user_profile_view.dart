@@ -1,22 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/core/logger.dart';
 import 'package:unshelf_seller/models/user_model.dart';
-import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/utils/theme.dart';
+import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 
-class EditUserProfileView extends StatelessWidget {
+class EditUserProfileView extends ConsumerStatefulWidget {
   final UserProfileModel userProfile;
 
-  EditUserProfileView({required this.userProfile});
+  const EditUserProfileView({super.key, required this.userProfile});
+
+  @override
+  ConsumerState<EditUserProfileView> createState() =>
+      _EditUserProfileViewState();
+}
+
+class _EditUserProfileViewState extends ConsumerState<EditUserProfileView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(userProfileViewModelProvider.notifier)
+          .initializeControllers(widget.userProfile);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<UserProfileViewModel>(context);
-
-    viewModel.initializeControllers(userProfile);
+    final state = ref.watch(userProfileViewModelProvider);
+    final notifier = ref.read(userProfileViewModelProvider.notifier);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -24,10 +40,10 @@ class EditUserProfileView extends StatelessWidget {
           onBackPressed: () {
             Navigator.pop(context);
           }),
-      body: viewModel.isLoading
+      body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : viewModel.errorMessage != null
-              ? Center(child: Text(viewModel.errorMessage!))
+          : state.errorMessage != null
+              ? Center(child: Text(state.errorMessage!))
               : Padding(
                   padding: const EdgeInsets.all(AppTheme.spacing16),
                   child: Column(
@@ -35,7 +51,7 @@ class EditUserProfileView extends StatelessWidget {
                     children: [
                       const SizedBox(height: AppTheme.spacing8),
                       TextFormField(
-                        controller: viewModel.nameController,
+                        controller: notifier.nameController,
                         decoration: const InputDecoration(
                           labelText: 'Name',
                         ),
@@ -48,7 +64,7 @@ class EditUserProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
-                        controller: viewModel.emailController,
+                        controller: notifier.emailController,
                         decoration: const InputDecoration(
                           labelText: 'Email',
                         ),
@@ -63,7 +79,7 @@ class EditUserProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
-                        controller: viewModel.phoneController,
+                        controller: notifier.phoneController,
                         decoration: const InputDecoration(
                           labelText: 'Phone Number',
                         ),
@@ -79,7 +95,7 @@ class EditUserProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
-                        controller: viewModel.passwordController,
+                        controller: notifier.passwordController,
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Password',
@@ -95,7 +111,7 @@ class EditUserProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: AppTheme.spacing16),
                       TextFormField(
-                        controller: viewModel.confirmPasswordController,
+                        controller: notifier.confirmPasswordController,
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Confirm Password',
@@ -113,19 +129,23 @@ class EditUserProfileView extends StatelessWidget {
                         child: CustomButton(
                           text: 'Save Changes',
                           onPressed: () {
-                            viewModel.updateUserProfile();
+                            notifier.updateUserProfile();
 
-                            if (viewModel.errorMessage == null) {
+                            final updatedState =
+                                ref.read(userProfileViewModelProvider);
+                            if (updatedState.errorMessage == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Profile updated successfully'),
+                                  content:
+                                      Text('Profile updated successfully'),
                                 ),
                               );
                             }
 
-                            AppLogger.debug('Passing ${viewModel.userProfile}');
+                            AppLogger.debug(
+                                'Passing ${updatedState.userProfile}');
 
-                            Navigator.pop(context, viewModel.userProfile);
+                            Navigator.pop(context, updatedState.userProfile);
                           },
                         ),
                       ),

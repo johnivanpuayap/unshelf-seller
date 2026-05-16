@@ -1,9 +1,21 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:unshelf_seller/core/constants/status_constants.dart';
+import 'package:unshelf_seller/core/providers/services.dart';
 import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 
 import '../mocks/mock_wallet_service.dart';
+
+/// Builds a [ProviderContainer] with the wallet ViewModel's service
+/// dependency overridden with the given mock.
+ProviderContainer _makeContainer(MockWalletService walletService) {
+  final container = ProviderContainer(overrides: [
+    walletServiceProvider.overrideWithValue(walletService),
+  ]);
+  addTearDown(container.dispose);
+  return container;
+}
 
 void main() {
   late MockWalletService mockService;
@@ -11,16 +23,6 @@ void main() {
   setUp(() {
     mockService = MockWalletService();
   });
-
-  /// Helper: constructs WalletViewModel and waits for the constructor's
-  /// async `updateTransactions()` to settle.
-  Future<WalletViewModel> buildVm() async {
-    final vm = WalletViewModel(walletService: mockService);
-    // Constructor fires updateTransactions() but doesn't await it.
-    // Pump the microtask queue so the Future completes.
-    await Future<void>.delayed(Duration.zero);
-    return vm;
-  }
 
   group('updateTransactions', () {
     test('sale transaction adds sellerEarnings to balance', () async {
@@ -34,12 +36,16 @@ void main() {
         },
       ];
 
-      final vm = await buildVm();
+      final container = _makeContainer(mockService);
+      await container
+          .read(walletViewModelProvider.notifier)
+          .updateTransactions();
 
-      expect(vm.balance, 150.0);
-      expect(vm.transactions.length, 1);
-      expect(vm.transactions.first.type, StatusConstants.sale);
-      expect(vm.transactions.first.amount, 150.0);
+      final state = container.read(walletViewModelProvider);
+      expect(state.balance, 150.0);
+      expect(state.transactions.length, 1);
+      expect(state.transactions.first.type, StatusConstants.sale);
+      expect(state.transactions.first.amount, 150.0);
     });
 
     test('withdrawal transaction subtracts amount from balance', () async {
@@ -51,11 +57,15 @@ void main() {
         },
       ];
 
-      final vm = await buildVm();
+      final container = _makeContainer(mockService);
+      await container
+          .read(walletViewModelProvider.notifier)
+          .updateTransactions();
 
-      expect(vm.balance, -50.0);
-      expect(vm.transactions.length, 1);
-      expect(vm.transactions.first.type, StatusConstants.withdraw);
+      final state = container.read(walletViewModelProvider);
+      expect(state.balance, -50.0);
+      expect(state.transactions.length, 1);
+      expect(state.transactions.first.type, StatusConstants.withdraw);
     });
 
     test('commission fee transaction subtracts transactionFee', () async {
@@ -69,10 +79,14 @@ void main() {
         },
       ];
 
-      final vm = await buildVm();
+      final container = _makeContainer(mockService);
+      await container
+          .read(walletViewModelProvider.notifier)
+          .updateTransactions();
 
-      expect(vm.balance, -10.0);
-      expect(vm.transactions.first.type, 'Commission Fee');
+      final state = container.read(walletViewModelProvider);
+      expect(state.balance, -10.0);
+      expect(state.transactions.first.type, 'Commission Fee');
     });
 
     test('multiple transactions compute correct balance', () async {
@@ -105,11 +119,15 @@ void main() {
         },
       ];
 
-      final vm = await buildVm();
+      final container = _makeContainer(mockService);
+      await container
+          .read(walletViewModelProvider.notifier)
+          .updateTransactions();
 
       // 200 + 100 - 75 - 15 = 210
-      expect(vm.balance, 210.0);
-      expect(vm.transactions.length, 4);
+      final state = container.read(walletViewModelProvider);
+      expect(state.balance, 210.0);
+      expect(state.transactions.length, 4);
     });
   });
 
@@ -125,12 +143,17 @@ void main() {
         },
       ];
 
-      final vm = await buildVm();
-      expect(vm.balance, 500.0);
+      final container = _makeContainer(mockService);
+      await container
+          .read(walletViewModelProvider.notifier)
+          .updateTransactions();
+      expect(container.read(walletViewModelProvider).balance, 500.0);
 
-      await vm.withdrawRequest(100.0, 'John', 'BDO', '1234567890');
+      await container
+          .read(walletViewModelProvider.notifier)
+          .withdrawRequest(100.0, 'John', 'BDO', '1234567890');
 
-      expect(vm.balance, 400.0);
+      expect(container.read(walletViewModelProvider).balance, 400.0);
       expect(mockService.submitWithdrawalCalled, 1);
       expect(mockService.lastWithdrawalAmount, 100.0);
     });
@@ -139,13 +162,19 @@ void main() {
   group('error handling', () {
     test('service error sets errorMessage', () async {
       mockService.transactionsResult = [];
-      final vm = await buildVm();
+      final container = _makeContainer(mockService);
+      await container
+          .read(walletViewModelProvider.notifier)
+          .updateTransactions();
 
       mockService.errorToThrow = Exception('Server down');
 
-      await vm.withdrawRequest(50.0, 'John', 'BDO', '123');
+      await container
+          .read(walletViewModelProvider.notifier)
+          .withdrawRequest(50.0, 'John', 'BDO', '123');
 
-      expect(vm.errorMessage, contains('Server down'));
+      final state = container.read(walletViewModelProvider);
+      expect(state.errorMessage, contains('Server down'));
     });
   });
 }

@@ -1,42 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
 import 'package:unshelf_seller/models/bundle_model.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 
-class BundleDetailsView extends StatefulWidget {
+class BundleDetailsView extends ConsumerStatefulWidget {
   final String bundleId;
 
   const BundleDetailsView({super.key, required this.bundleId});
 
   @override
-  State<BundleDetailsView> createState() => _BundleDetailsViewState();
+  ConsumerState<BundleDetailsView> createState() => _BundleDetailsViewState();
 }
 
-class _BundleDetailsViewState extends State<BundleDetailsView> {
+class _BundleDetailsViewState extends ConsumerState<BundleDetailsView> {
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, () {
-      context.read<BundleViewModel>().getBundleDetails(widget.bundleId);
+      ref
+          .read(bundleViewModelProvider.notifier)
+          .getBundleDetails(widget.bundleId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(bundleViewModelProvider);
+    final BundleModel? bundle = state.bundle;
+
     return Scaffold(
       appBar: CustomAppBar(
           title: 'Bundle Details',
           onBackPressed: () {
             Navigator.pop(context);
           }),
-      body: Consumer<BundleViewModel>(
-        builder: (context, viewModel, child) {
-          final BundleModel? bundle = viewModel.bundle;
-
-          if (viewModel.isLoading) {
+      body: Builder(
+        builder: (context) {
+          if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -107,8 +110,8 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
                                         item['imageUrl'].toString()),
                                     fit: BoxFit.cover)
                                 : null,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusSmall / 4),
+                            borderRadius: BorderRadius.circular(
+                                AppTheme.radiusSmall / 4),
                           ),
                         ),
                         title: Text(
@@ -174,7 +177,7 @@ class _BundleDetailsViewState extends State<BundleDetailsView> {
                         ?.copyWith(color: AppColors.textPrimary),
                     children: [
                       TextSpan(
-                        text: '\u20B1 ',
+                        text: '₱ ',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       TextSpan(
