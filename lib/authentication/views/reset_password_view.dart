@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/core/logger.dart';
 
@@ -116,7 +117,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                     const SizedBox(height: 40),
 
                     // New password
-                    _FieldLabel('Password', color: cs.onSurface),
+                    FieldLabel('Password', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
@@ -150,7 +151,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                     const SizedBox(height: 20),
 
                     // Confirm password
-                    _FieldLabel('Confirm password', color: cs.onSurface),
+                    FieldLabel('Confirm password', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _confirmPasswordController,
@@ -241,18 +242,3 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
   }
 }
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

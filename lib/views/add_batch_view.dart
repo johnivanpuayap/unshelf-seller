@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 import 'package:unshelf_seller/viewmodels/batch_viewmodel.dart';
 
 /// Add-batch form, structured to the Phase 1 Quality Bar:
 /// SafeArea + Center + SingleChildScrollView + maxWidth 420 + Form +
-/// _FieldLabel pattern, mirroring the auth screens.
+/// FieldLabel pattern, mirroring the auth screens.
 class AddBatchView extends ConsumerStatefulWidget {
   final ProductModel product;
 
@@ -128,7 +129,7 @@ class _AddBatchViewState extends ConsumerState<AddBatchView> {
                     const SizedBox(height: 32),
 
                     // Batch number (optional)
-                    _FieldLabel('Batch number (optional)', color: cs.onSurface),
+                    FieldLabel('Batch number (optional)', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.batchNumberController,
@@ -140,7 +141,7 @@ class _AddBatchViewState extends ConsumerState<AddBatchView> {
                     const SizedBox(height: 20),
 
                     // Expiry date
-                    _FieldLabel('Expiry date', color: cs.onSurface),
+                    FieldLabel('Expiry date', color: cs.onSurface),
                     const SizedBox(height: 8),
                     _DatePickerField(
                       label: expiryLabel,
@@ -150,7 +151,7 @@ class _AddBatchViewState extends ConsumerState<AddBatchView> {
                     const SizedBox(height: 20),
 
                     // Stock with stepper
-                    _FieldLabel('Stock', color: cs.onSurface),
+                    FieldLabel('Stock', color: cs.onSurface),
                     const SizedBox(height: 8),
                     _StockStepper(
                       controller: notifier.stockController,
@@ -160,7 +161,7 @@ class _AddBatchViewState extends ConsumerState<AddBatchView> {
                     const SizedBox(height: 20),
 
                     // Quantifier
-                    _FieldLabel('Quantifier', color: cs.onSurface),
+                    FieldLabel('Quantifier', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.quantifierController,
@@ -178,7 +179,7 @@ class _AddBatchViewState extends ConsumerState<AddBatchView> {
                     const SizedBox(height: 20),
 
                     // Price
-                    _FieldLabel('Price', color: cs.onSurface),
+                    FieldLabel('Price', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.priceController,
@@ -209,7 +210,7 @@ class _AddBatchViewState extends ConsumerState<AddBatchView> {
                     const SizedBox(height: 20),
 
                     // Discount
-                    _FieldLabel('Discount (%)', color: cs.onSurface),
+                    FieldLabel('Discount (%)', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.discountController,
@@ -496,18 +497,3 @@ class _StepperButton extends StatelessWidget {
 // Field label (copied verbatim from auth screens)
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

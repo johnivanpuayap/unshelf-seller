@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/core/logger.dart';
 import 'package:unshelf_seller/models/user_model.dart';
 import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
@@ -108,7 +109,7 @@ class _EditUserProfileViewState extends ConsumerState<EditUserProfileView> {
                       onTap: saving ? () {} : _onAvatarTap,
                     ),
                     const SizedBox(height: 32),
-                    _FieldLabel('Name', color: cs.onSurface),
+                    FieldLabel('Name', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.nameController,
@@ -122,7 +123,7 @@ class _EditUserProfileViewState extends ConsumerState<EditUserProfileView> {
                           : null,
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Email', color: cs.onSurface),
+                    FieldLabel('Email', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.emailController,
@@ -145,7 +146,7 @@ class _EditUserProfileViewState extends ConsumerState<EditUserProfileView> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Phone number', color: cs.onSurface),
+                    FieldLabel('Phone number', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.phoneController,
@@ -389,7 +390,7 @@ class _ChangePasswordSection extends StatelessWidget {
         ),
         if (expanded) ...[
           const SizedBox(height: 16),
-          _FieldLabel('New password', color: cs.onSurface),
+          FieldLabel('New password', color: cs.onSurface),
           const SizedBox(height: 8),
           TextFormField(
             controller: passwordController,
@@ -418,7 +419,7 @@ class _ChangePasswordSection extends StatelessWidget {
             },
           ),
           const SizedBox(height: 20),
-          _FieldLabel('Confirm password', color: cs.onSurface),
+          FieldLabel('Confirm password', color: cs.onSurface),
           const SizedBox(height: 8),
           TextFormField(
             controller: confirmPasswordController,
@@ -459,18 +460,3 @@ class _ChangePasswordSection extends StatelessWidget {
 // Field label — Phase 1 Quality Bar form pattern
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

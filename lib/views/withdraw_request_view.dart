@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 
 /// Withdraw request form, structured to the Phase 1 Quality Bar:
 /// SafeArea + Center + SingleChildScrollView + maxWidth 420 + Form +
-/// `_FieldLabel` pattern, mirroring the auth screens.
+/// `FieldLabel` pattern, mirroring the auth screens.
 class WithdrawRequestView extends ConsumerStatefulWidget {
   const WithdrawRequestView({super.key});
 
@@ -146,7 +147,7 @@ class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
                     const SizedBox(height: 32),
 
                     // Amount
-                    _FieldLabel('Amount', color: cs.onSurface),
+                    FieldLabel('Amount', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _amountController,
@@ -182,7 +183,7 @@ class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
                     const SizedBox(height: 20),
 
                     // Payment method
-                    _FieldLabel('Payment method', color: cs.onSurface),
+                    FieldLabel('Payment method', color: cs.onSurface),
                     const SizedBox(height: 8),
                     _MethodToggle(
                       value: _method,
@@ -195,7 +196,7 @@ class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
                     const SizedBox(height: 20),
 
                     // Account name
-                    _FieldLabel('Account name', color: cs.onSurface),
+                    FieldLabel('Account name', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _accountNameController,
@@ -215,7 +216,7 @@ class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
 
                     if (_method == _PayoutMethod.bank) ...[
                       // Bank
-                      _FieldLabel('Bank', color: cs.onSurface),
+                      FieldLabel('Bank', color: cs.onSurface),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedBank,
@@ -237,7 +238,7 @@ class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
                       const SizedBox(height: 20),
 
                       // Account number
-                      _FieldLabel('Account number', color: cs.onSurface),
+                      FieldLabel('Account number', color: cs.onSurface),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _bankAccountController,
@@ -261,7 +262,7 @@ class _WithdrawRequestViewState extends ConsumerState<WithdrawRequestView> {
                       ),
                     ] else ...[
                       // GCash number
-                      _FieldLabel('GCash number', color: cs.onSurface),
+                      FieldLabel('GCash number', color: cs.onSurface),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _gcashNumberController,
@@ -499,18 +500,3 @@ class _MethodSegment extends StatelessWidget {
 // Field label (copied verbatim from auth screens)
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/models/store_model.dart';
 import 'package:unshelf_seller/viewmodels/store_profile_viewmodel.dart';
 
@@ -80,7 +81,7 @@ class _EditStoreProfileViewState extends ConsumerState<EditStoreProfileView> {
                       onTap: saving ? () {} : notifier.pickImage,
                     ),
                     const SizedBox(height: 32),
-                    _FieldLabel('Store name', color: cs.onSurface),
+                    FieldLabel('Store name', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.nameController,
@@ -93,7 +94,7 @@ class _EditStoreProfileViewState extends ConsumerState<EditStoreProfileView> {
                           : null,
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Phone number', color: cs.onSurface),
+                    FieldLabel('Phone number', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.phoneNumberController,
@@ -104,7 +105,7 @@ class _EditStoreProfileViewState extends ConsumerState<EditStoreProfileView> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Address', color: cs.onSurface),
+                    FieldLabel('Address', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.addressController,
@@ -240,18 +241,3 @@ class _AvatarPicker extends ConsumerWidget {
 // Field label — Phase 1 Quality Bar form pattern
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/models/report_model.dart';
@@ -9,7 +10,7 @@ import 'package:unshelf_seller/models/report_model.dart';
 /// an order.
 ///
 /// Layout follows the Phase 1 auth template: a max-width 420 form shell with
-/// `_FieldLabel` rows, a [Wrap] of single-select reason chips, a multi-line
+/// `FieldLabel` rows, a [Wrap] of single-select reason chips, a multi-line
 /// description textarea, and a 52px primary pill submit CTA. On success the
 /// form resets and a snackbar confirms the report was sent; the screen then
 /// pops back to the previous route (typically the store / settings menu).
@@ -133,7 +134,7 @@ class _ReportFormViewState extends State<ReportFormView> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _FieldLabel('Reason', color: cs.onSurface),
+                    FieldLabel('Reason', color: cs.onSurface),
                     const SizedBox(height: 12),
                     _ReasonChipsField(
                       reasons: _reasons,
@@ -144,7 +145,7 @@ class _ReportFormViewState extends State<ReportFormView> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    _FieldLabel('Describe the issue', color: cs.onSurface),
+                    FieldLabel('Describe the issue', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _descriptionController,
@@ -211,22 +212,6 @@ class _ReportFormViewState extends State<ReportFormView> {
 // Subwidgets
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}
 
 class _ReasonChipsField extends StatelessWidget {
   const _ReasonChipsField({

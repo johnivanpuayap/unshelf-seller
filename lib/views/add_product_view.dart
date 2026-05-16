@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/viewmodels/product_viewmodel.dart';
 import 'package:unshelf_seller/views/product_details_view.dart';
 
 /// Add-product form, structured to the Phase 1 Quality Bar:
 /// SafeArea + Center + SingleChildScrollView + maxWidth 420 + Form +
-/// _FieldLabel pattern, mirroring the auth screens.
+/// FieldLabel pattern, mirroring the auth screens.
 class AddProductView extends ConsumerWidget {
   final VoidCallback onProductAdded;
 
@@ -61,7 +62,7 @@ class AddProductView extends ConsumerWidget {
                     const SizedBox(height: 32),
 
                     // Product image
-                    _FieldLabel('Product image', color: cs.onSurface),
+                    FieldLabel('Product image', color: cs.onSurface),
                     const SizedBox(height: 8),
                     _ImagePickerBox(
                       data: state.mainImageState.data,
@@ -81,7 +82,7 @@ class AddProductView extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // Name
-                    _FieldLabel('Name', color: cs.onSurface),
+                    FieldLabel('Name', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.nameController,
@@ -99,7 +100,7 @@ class AddProductView extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // Description
-                    _FieldLabel('Description', color: cs.onSurface),
+                    FieldLabel('Description', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: notifier.descriptionController,
@@ -119,7 +120,7 @@ class AddProductView extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // Category
-                    _FieldLabel('Category', color: cs.onSurface),
+                    FieldLabel('Category', color: cs.onSurface),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: state.selectedCategory.isEmpty
@@ -302,18 +303,3 @@ class _ImagePickerBox extends StatelessWidget {
 // Field label (copied verbatim from auth screens)
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}
