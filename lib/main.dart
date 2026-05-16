@@ -11,13 +11,11 @@ import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_batch_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_bundle_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_order_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/analytics_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/batch_history_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
@@ -113,12 +111,6 @@ void main() async {
             create: (_) => ProductAnalyticsViewModel(
               productService: locator<IProductService>(),
               analyticsService: locator<IAnalyticsService>(),
-              batchService: locator<IBatchService>(),
-            ),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => BatchHistoryViewModel(
-              orderService: locator<IOrderService>(),
               batchService: locator<IBatchService>(),
             ),
           ),
