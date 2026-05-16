@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    hide ChangeNotifierProvider;
 import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/core/interfaces/i_analytics_service.dart';
@@ -57,99 +59,101 @@ void main() async {
   setupLocator();
   UnshelfTheme.preloadFonts();
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => DashboardViewModel()),
-        ChangeNotifierProvider(
-          create: (_) => OrderViewModel(
-            orderService: locator<IOrderService>(),
+    ProviderScope(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => DashboardViewModel()),
+          ChangeNotifierProvider(
+            create: (_) => OrderViewModel(
+              orderService: locator<IOrderService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProductViewModel(
-            productService: locator<IProductService>(),
+          ChangeNotifierProvider(
+            create: (_) => ProductViewModel(
+              productService: locator<IProductService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => StoreViewModel(
-            storeService: locator<IStoreService>(),
+          ChangeNotifierProvider(
+            create: (_) => StoreViewModel(
+              storeService: locator<IStoreService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => StoreLocationViewModel(
-            storeService: locator<IStoreService>(),
+          ChangeNotifierProvider(
+            create: (_) => StoreLocationViewModel(
+              storeService: locator<IStoreService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => RestockViewModel(
-            productService: locator<IProductService>(),
+          ChangeNotifierProvider(
+            create: (_) => RestockViewModel(
+              productService: locator<IProductService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => BundleViewModel(
-            bundleService: locator<IBundleService>(),
-            batchService: locator<IBatchService>(),
+          ChangeNotifierProvider(
+            create: (_) => BundleViewModel(
+              bundleService: locator<IBundleService>(),
+              batchService: locator<IBatchService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(create: (_) => SettingsViewModel()),
-        ChangeNotifierProvider(
-            create: (_) => UserProfileViewModel(userProfile: null)),
-        ChangeNotifierProvider(
-          create: (_) => ListingViewModel(
-            productService: locator<IProductService>(),
-            bundleService: locator<IBundleService>(),
+          ChangeNotifierProvider(create: (_) => SettingsViewModel()),
+          ChangeNotifierProvider(
+              create: (_) => UserProfileViewModel(userProfile: null)),
+          ChangeNotifierProvider(
+            create: (_) => ListingViewModel(
+              productService: locator<IProductService>(),
+              bundleService: locator<IBundleService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProductSummaryViewModel(
-            productService: locator<IProductService>(),
-            batchService: locator<IBatchService>(),
+          ChangeNotifierProvider(
+            create: (_) => ProductSummaryViewModel(
+              productService: locator<IProductService>(),
+              batchService: locator<IBatchService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(create: (_) => WalletViewModel()),
-        ChangeNotifierProvider(create: (_) => AnalyticsViewModel()),
-        ChangeNotifierProvider(
-          create: (_) => NotificationViewModel(
-            notificationService: locator<INotificationService>(),
+          ChangeNotifierProvider(create: (_) => WalletViewModel()),
+          ChangeNotifierProvider(create: (_) => AnalyticsViewModel()),
+          ChangeNotifierProvider(
+            create: (_) => NotificationViewModel(
+              notificationService: locator<INotificationService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => BatchViewModel(
-            batchService: locator<IBatchService>(),
+          ChangeNotifierProvider(
+            create: (_) => BatchViewModel(
+              batchService: locator<IBatchService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SelectProductsViewModel(
-            batchService: locator<IBatchService>(),
-            productService: locator<IProductService>(),
+          ChangeNotifierProvider(
+            create: (_) => SelectProductsViewModel(
+              batchService: locator<IBatchService>(),
+              productService: locator<IProductService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProductAnalyticsViewModel(
-            productService: locator<IProductService>(),
-            analyticsService: locator<IAnalyticsService>(),
-            batchService: locator<IBatchService>(),
+          ChangeNotifierProvider(
+            create: (_) => ProductAnalyticsViewModel(
+              productService: locator<IProductService>(),
+              analyticsService: locator<IAnalyticsService>(),
+              batchService: locator<IBatchService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => InventoryViewModel(
-            productService: locator<IProductService>(),
-            batchService: locator<IBatchService>(),
+          ChangeNotifierProvider(
+            create: (_) => InventoryViewModel(
+              productService: locator<IProductService>(),
+              batchService: locator<IBatchService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => BatchHistoryViewModel(
-            orderService: locator<IOrderService>(),
-            batchService: locator<IBatchService>(),
+          ChangeNotifierProvider(
+            create: (_) => BatchHistoryViewModel(
+              orderService: locator<IOrderService>(),
+              batchService: locator<IBatchService>(),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => HomeViewModel(
-            notificationService: locator<INotificationService>(),
+          ChangeNotifierProvider(
+            create: (_) => HomeViewModel(
+              notificationService: locator<INotificationService>(),
+            ),
           ),
-        ),
-      ],
-      child: const MyApp(),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
