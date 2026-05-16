@@ -1,9 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:unshelf_seller/utils/colors.dart';
 
-class Chart extends StatefulWidget {
+/// A line chart for time-series analytics screens.
+///
+/// Rendering uses `Theme.of(context).colorScheme.primary` for the line stroke
+/// and a soft alpha-blended fill underneath. Tick labels and grid lines pull
+/// from `Theme.of(context)` so the chart stays on-brand in both light and
+/// dark themes.
+class Chart extends StatelessWidget {
   const Chart({
     super.key,
     required this.dataMap,
@@ -16,109 +21,81 @@ class Chart extends StatefulWidget {
   final double maxYValue;
 
   @override
-  State<Chart> createState() => _ChartState();
-}
-
-class _ChartState extends State<Chart> {
-  List<Color> get gradientColors => [
-        AppColors.lightColor,
-        AppColors.primaryColor,
-      ];
-
-  @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return SizedBox(
-      height: screenHeight * 0.25,
+      height: screenHeight * 0.28,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: screenHeight * 0.02,
-        ),
-        child: LineChart(
-          mainData(context, screenWidth),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: LineChart(_chartData(context)),
       ),
     );
   }
 
-  Widget bottomTitleWidgets(double value, TitleMeta meta, double screenWidth) {
-    final style = TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: screenWidth * 0.02,
-    );
+  LineChartData _chartData(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-    DateTime date = widget.dataMap.keys.elementAt(value.toInt());
-
-    String dateString;
-    if (widget.maxXValue == 14) {
-      dateString = DateFormat('MM/dd').format(date);
-    } else if (widget.maxXValue == 6) {
-      dateString = DateFormat('MMM yy').format(date);
-    } else if (widget.maxXValue == 4) {
-      dateString = DateFormat('MM/dd').format(date);
-    } else {
-      dateString = DateFormat('yyyy').format(date);
-    }
-
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      child: Text(dateString, style: style),
-    );
-  }
-
-  Widget leftTitleWidgets(dynamic value, TitleMeta meta, double screenWidth) {
-    final style = TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: screenWidth * 0.03,
-    );
-
-    return Text(
-      value is int ? '$value' : '${value.ceil()}',
-      style: style,
-      textAlign: TextAlign.left,
-    );
-  }
-
-  LineChartData mainData(BuildContext context, double screenWidth) {
-    List<FlSpot> spots = [];
-    List<DateTime> keys = widget.dataMap.keys.toList();
-
+    final keys = dataMap.keys.toList();
+    final spots = <FlSpot>[];
     for (int i = 0; i < keys.length; i++) {
-      DateTime date = keys[i];
-      double value = (widget.dataMap[date] ?? 0.0).toDouble();
-
-      spots.add(FlSpot(i.toDouble(), value.toDouble()));
+      final value = (dataMap[keys[i]] ?? 0.0).toDouble();
+      spots.add(FlSpot(i.toDouble(), value));
     }
 
-    int numberOfDigits = widget.maxYValue.toString().split('.')[0].length;
-    double reservedSize = 10.0 + (numberOfDigits * 5.0);
+    final digits = maxYValue.toStringAsFixed(0).length;
+    final reservedSize = 16.0 + (digits * 6.0);
+
+    final gridColor = cs.onSurface.withValues(alpha: 0.08);
+    final tickColor = cs.onSurface.withValues(alpha: 0.55);
+    final tickStyle = theme.textTheme.labelSmall?.copyWith(
+      color: tickColor,
+      fontWeight: FontWeight.w600,
+    );
 
     return LineChartData(
       gridData: FlGridData(
         show: true,
-        horizontalInterval: widget.maxYValue > 0 ? widget.maxYValue / 5 : 1.0,
+        horizontalInterval: maxYValue > 0 ? maxYValue / 4 : 1.0,
         drawVerticalLine: false,
+        getDrawingHorizontalLine: (_) =>
+            FlLine(color: gridColor, strokeWidth: 1),
       ),
       titlesData: FlTitlesData(
         show: true,
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 30,
+            reservedSize: 28,
             interval: 1,
-            getTitlesWidget: (value, meta) =>
-                bottomTitleWidgets(value, meta, screenWidth),
+            getTitlesWidget: (value, meta) {
+              final index = value.toInt();
+              if (index < 0 || index >= keys.length) {
+                return const SizedBox.shrink();
+              }
+              final date = keys[index];
+              final label = _xLabel(date);
+              return SideTitleWidget(
+                axisSide: meta.axisSide,
+                space: 6,
+                child: Text(label, style: tickStyle),
+              );
+            },
           ),
         ),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            interval: widget.maxYValue > 0 ? widget.maxYValue / 4 : 1.0,
-            getTitlesWidget: (value, meta) =>
-                leftTitleWidgets(value, meta, screenWidth),
+            interval: maxYValue > 0 ? maxYValue / 4 : 1.0,
             reservedSize: reservedSize,
+            getTitlesWidget: (value, meta) {
+              return Text(
+                value.toStringAsFixed(0),
+                style: tickStyle,
+                textAlign: TextAlign.left,
+              );
+            },
           ),
         ),
         rightTitles: const AxisTitles(
@@ -130,31 +107,52 @@ class _ChartState extends State<Chart> {
       ),
       borderData: FlBorderData(
         show: true,
-        border: Border.all(
-            color: Theme.of(context).dividerTheme.color ?? AppColors.border),
+        border: Border(
+          bottom: BorderSide(color: gridColor),
+          left: BorderSide(color: gridColor),
+        ),
       ),
       minX: 0,
-      maxX: widget.maxXValue - 1,
+      maxX: maxXValue - 1,
       minY: 0,
-      maxY: widget.maxYValue,
+      maxY: maxYValue == 0 ? 1.0 : maxYValue,
       lineBarsData: [
         LineChartBarData(
           spots: spots,
           isCurved: true,
-          gradient: LinearGradient(colors: gradientColors),
-          barWidth: screenWidth * 0.005,
+          color: cs.primary,
+          barWidth: 2.5,
           isStrokeCapRound: true,
-          dotData: FlDotData(show: true),
+          dotData: FlDotData(
+            show: true,
+            getDotPainter: (spot, percent, bar, index) =>
+                FlDotCirclePainter(
+              radius: 3,
+              color: cs.primary,
+              strokeColor: cs.surface,
+              strokeWidth: 2,
+            ),
+          ),
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: gradientColors
-                  .map((color) => color.withValues(alpha: 0.3))
-                  .toList(),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                cs.primary.withValues(alpha: 0.24),
+                cs.primary.withValues(alpha: 0.04),
+              ],
             ),
           ),
         ),
       ],
     );
+  }
+
+  String _xLabel(DateTime date) {
+    if (maxXValue == 14) return DateFormat('MM/dd').format(date);
+    if (maxXValue == 6) return DateFormat('MMM yy').format(date);
+    if (maxXValue == 4) return DateFormat('MM/dd').format(date);
+    return DateFormat('yyyy').format(date);
   }
 }
