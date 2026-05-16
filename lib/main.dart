@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'
 import 'package:provider/provider.dart';
 
 import 'package:unshelf_seller/core/interfaces/i_notification_service.dart';
-import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/settings_viewmodel.dart';
@@ -16,7 +15,6 @@ import 'package:unshelf_seller/viewmodels/user_profile_viewmodel.dart';
 import 'package:unshelf_seller/views/home_view.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/authentication/views/reset_password_view.dart';
-import 'package:unshelf_seller/viewmodels/store_location_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 
 void main() async {
@@ -41,11 +39,6 @@ void main() async {
     ProviderScope(
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(
-            create: (_) => StoreLocationViewModel(
-              storeService: locator<IStoreService>(),
-            ),
-          ),
           ChangeNotifierProvider(create: (_) => SettingsViewModel()),
           ChangeNotifierProvider(
               create: (_) => UserProfileViewModel(userProfile: null)),
