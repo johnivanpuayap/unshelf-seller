@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:unshelf_seller/components/custom_app_bar.dart';
-import 'package:unshelf_seller/components/custom_button.dart';
 import 'package:unshelf_seller/models/store_model.dart';
-import 'package:unshelf_seller/utils/colors.dart';
-import 'package:unshelf_seller/utils/theme.dart';
 import 'package:unshelf_seller/viewmodels/store_schedule_viewmodel.dart';
 
+/// Edit Store Schedule screen.
+///
+/// One card per day (Mon–Sun) with an "open" toggle. When a day is open, two
+/// time-picker chips expose opens-at / closes-at; tapping each opens a themed
+/// `showTimePicker`. Bottom 52px pill commits via `saveProfile`.
 class EditStoreScheduleView extends ConsumerStatefulWidget {
   final StoreModel storeDetails;
 
@@ -19,6 +20,8 @@ class EditStoreScheduleView extends ConsumerStatefulWidget {
 }
 
 class _EditStoreScheduleViewState extends ConsumerState<EditStoreScheduleView> {
+  bool _saving = false;
+
   @override
   void initState() {
     super.initState();
@@ -29,147 +32,302 @@ class _EditStoreScheduleViewState extends ConsumerState<EditStoreScheduleView> {
     });
   }
 
+  Future<void> _save() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    final notifier = ref.read(storeScheduleViewModelProvider.notifier);
+    final saved =
+        await notifier.saveProfile(context, widget.storeDetails.userId);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (saved) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(storeScheduleViewModelProvider);
-    final notifier = ref.read(storeScheduleViewModelProvider.notifier);
+    final state = ref.watch(storeScheduleViewModelProvider);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final tt = theme.textTheme;
+    final days = state.storeSchedule.keys.toList();
 
     return Scaffold(
-      appBar: CustomAppBar(
-          title: 'Edit Store Schedule',
-          onBackPressed: () {
-            Navigator.pop(context);
-          }),
-      body: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacing16),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                children: viewModel.storeSchedule.keys.map((day) {
-                  bool isActive = viewModel.storeSchedule[day]!['isOpen'];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                        vertical: AppTheme.spacing8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppTheme.spacing12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(day,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium),
-                              Switch(
-                                value: isActive,
-                                activeThumbColor: AppColors.primaryColor,
-                                onChanged: (value) =>
-                                    notifier.toggleDay(day),
-                              ),
-                            ],
-                          ),
-                          if (isActive) ...[
-                            const SizedBox(height: AppTheme.spacing8),
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                _TimePickerButton(
-                                  label: 'Opening Time',
-                                  time: viewModel
-                                      .storeSchedule[day]!['open']!,
-                                  onPressed: () async {
-                                    final TimeOfDay? pickedTime =
-                                        await showTimePicker(
-                                      context: context,
-                                      initialTime: TimeOfDay.now(),
-                                    );
-                                    if (pickedTime != null) {
-                                      notifier.selectTime(
-                                          day, 'open', pickedTime);
-                                    }
-                                  },
-                                ),
-                                _TimePickerButton(
-                                  label: 'Closing Time',
-                                  time: viewModel
-                                      .storeSchedule[day]!['close']!,
-                                  onPressed: () async {
-                                    final TimeOfDay? pickedTime =
-                                        await showTimePicker(
-                                      context: context,
-                                      initialTime: TimeOfDay.now(),
-                                    );
-                                    if (pickedTime != null) {
-                                      notifier.selectTime(
-                                          day, 'close', pickedTime);
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ] else
-                            Text(
-                              'Closed all day',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: AppColors.textPrimary),
-                            ),
-                        ],
-                      ),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Store schedule',
+          style: tt.titleLarge?.copyWith(color: cs.onSurface),
+        ),
+        centerTitle: false,
+      ),
+      body: SafeArea(
+        top: false,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Set the days and hours when buyers can place orders for pickup.',
+                    style: tt.bodyMedium?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.65),
                     ),
-                  );
-                }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  if (days.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 48),
+                      child: Center(
+                        child: CircularProgressIndicator(color: cs.primary),
+                      ),
+                    )
+                  else
+                    Column(
+                      children: [
+                        for (var i = 0; i < days.length; i++) ...[
+                          _DayCard(
+                            day: days[i],
+                            isOpen: state.storeSchedule[days[i]]!['isOpen']
+                                    as bool? ??
+                                false,
+                            openLabel:
+                                (state.storeSchedule[days[i]]!['open'] ?? '')
+                                    .toString(),
+                            closeLabel:
+                                (state.storeSchedule[days[i]]!['close'] ?? '')
+                                    .toString(),
+                          ),
+                          if (i < days.length - 1)
+                            const SizedBox(height: 12),
+                        ],
+                      ],
+                    ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _saving || days.isEmpty ? null : _save,
+                      child: _saving
+                          ? SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: cs.onPrimary,
+                              ),
+                            )
+                          : Text(
+                              'Save schedule',
+                              style: tt.labelLarge
+                                  ?.copyWith(color: cs.onPrimary),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppTheme.spacing24),
-            CustomButton(
-                text: 'Save Changes',
-                onPressed: () async {
-                  bool isSaved = await notifier.saveProfile(
-                      context, widget.storeDetails.userId);
-
-                  if (isSaved && context.mounted) {
-                    Navigator.pop(context);
-                  }
-                }),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _TimePickerButton extends StatelessWidget {
-  final String label;
-  final String time;
-  final VoidCallback onPressed;
+// ────────────────────────────────────────────────────────────────────────────
+// Day card — toggle on the header, time picker chips when open
+// ────────────────────────────────────────────────────────────────────────────
 
-  const _TimePickerButton(
-      {required this.label, required this.time, required this.onPressed});
+class _DayCard extends ConsumerWidget {
+  const _DayCard({
+    required this.day,
+    required this.isOpen,
+    required this.openLabel,
+    required this.closeLabel,
+  });
+
+  final String day;
+  final bool isOpen;
+  final String openLabel;
+  final String closeLabel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final tt = theme.textTheme;
+    final notifier = ref.read(storeScheduleViewModelProvider.notifier);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .02),
+            offset: const Offset(0, 1),
+            blurRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF1F2A20).withValues(alpha: .06),
+            offset: const Offset(0, 8),
+            blurRadius: 28,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  day,
+                  style: tt.titleMedium?.copyWith(color: cs.onSurface),
+                ),
+              ),
+              Text(
+                isOpen ? 'Open' : 'Closed',
+                style: tt.labelMedium?.copyWith(
+                  color: isOpen
+                      ? cs.primary
+                      : cs.onSurface.withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: isOpen,
+                onChanged: (_) => notifier.toggleDay(day),
+              ),
+            ],
+          ),
+          if (isOpen) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _TimeChip(
+                      label: 'Opens',
+                      value: openLabel,
+                      onTap: () => _pickTime(context, notifier, 'open'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _TimeChip(
+                      label: 'Closes',
+                      value: closeLabel,
+                      onTap: () => _pickTime(context, notifier, 'close'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Closed all day',
+                style: tt.bodySmall?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickTime(
+    BuildContext context,
+    StoreScheduleViewModel notifier,
+    String type,
+  ) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (ctx, child) {
+        // Theme inherits from the app's `ThemeData`, so the picker already
+        // honours the primary colour. The builder just keeps Material 3 on.
+        return Theme(data: Theme.of(ctx), child: child ?? const SizedBox());
+      },
+    );
+    if (picked != null) {
+      await notifier.selectTime(day, type, picked);
+    }
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Time chip — Quality-Bar styled tappable surface
+// ────────────────────────────────────────────────────────────────────────────
+
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(label,
-            style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppTheme.spacing4),
-        ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryColor,
-            foregroundColor: Colors.white,
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final tt = theme.textTheme;
+    final hasValue = value.trim().isNotEmpty;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: cs.onSurface.withValues(alpha: 0.10),
+            ),
           ),
-          child: Text(time.isEmpty ? 'Set Time' : time),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: tt.labelSmall?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                hasValue ? value : 'Set time',
+                style: tt.titleSmall?.copyWith(
+                  color: hasValue
+                      ? cs.onSurface
+                      : cs.onSurface.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
