@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:unshelf_seller/components/chat_screen.dart';
+import 'package:unshelf_seller/views/chats_view.dart';
 import 'package:unshelf_seller/viewmodels/home_viewmodel.dart';
 import 'package:unshelf_seller/views/dashboard_view.dart';
 import 'package:unshelf_seller/views/listings_view.dart';
@@ -69,7 +69,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           IconButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ChatScreen()),
+              MaterialPageRoute(builder: (_) => const ChatsView()),
             ),
             icon: const Icon(Icons.chat_outlined),
             color: cs.onSurface.withValues(alpha: 0.65),
