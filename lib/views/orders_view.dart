@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/components/order_card.dart';
