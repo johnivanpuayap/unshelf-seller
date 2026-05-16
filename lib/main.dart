@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'
-    hide ChangeNotifierProvider;
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/utils/theme.dart';
@@ -32,12 +30,7 @@ void main() async {
   setupLocator();
   UnshelfTheme.preloadFonts();
   runApp(
-    ProviderScope(
-      child: MultiProvider(
-        providers: const [],
-        child: const MyApp(),
-      ),
-    ),
+    const ProviderScope(child: MyApp()),
   );
 }
 
