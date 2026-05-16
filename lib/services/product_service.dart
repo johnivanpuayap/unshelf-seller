@@ -1,36 +1,29 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
+import 'package:get_it/get_it.dart';
 
 import 'package:unshelf_seller/core/constants/firestore_constants.dart';
 import 'package:unshelf_seller/core/current_user_provider.dart';
 import 'package:unshelf_seller/core/errors/app_exceptions.dart';
 import 'package:unshelf_seller/core/interfaces/i_product_service.dart';
 import 'package:unshelf_seller/core/logger.dart';
+import 'package:unshelf_seller/data/repositories/products_repository.dart';
 import 'package:unshelf_seller/models/batch_model.dart';
 import 'package:unshelf_seller/models/product_model.dart';
 
 class ProductService implements IProductService {
-  final FirebaseFirestore _firestore;
+  final ProductsRepository _repo;
   final CurrentUserProvider _currentUser;
 
   ProductService({
-    FirebaseFirestore? firestore,
+    ProductsRepository? repo,
     CurrentUserProvider? currentUser,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+  })  : _repo = repo ?? GetIt.instance<ProductsRepository>(),
         _currentUser = currentUser ?? CurrentUserProvider();
 
   @override
   Future<ProductModel?> getProduct(String productId) async {
     try {
-      final productDoc = await _firestore
-          .collection(FirestoreConstants.products)
-          .doc(productId)
-          .get();
-
-      if (productDoc.exists) {
-        return ProductModel.fromSnapshot(productDoc);
-      }
-
-      return null;
+      return await _repo.getProduct(productId);
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch product', e, stackTrace);
       throw FirestoreException('Failed to fetch product', originalError: e);
@@ -40,18 +33,10 @@ class ProductService implements IProductService {
   @override
   Future<List<ProductModel>> getProducts() async {
     try {
-      final productDocs = await _firestore
-          .collection(FirestoreConstants.products)
-          .where(FirestoreConstants.sellerId, isEqualTo: _currentUser.uid)
-          .get();
-
-      if (productDocs.docs.isNotEmpty) {
-        return productDocs.docs
-            .map((doc) => ProductModel.fromSnapshot(doc))
-            .toList();
-      }
-
-      return [];
+      // sellerId scoping is a service-level concern: the repo accepts a
+      // storeId and we inject the current user's uid from the auth-aware
+      // CurrentUserProvider.
+      return await _repo.getProductsByStore(_currentUser.uid);
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch products', e, stackTrace);
       throw FirestoreException('Failed to fetch products', originalError: e);
@@ -61,18 +46,16 @@ class ProductService implements IProductService {
   @override
   Future<List<BatchModel>?> getProductBatches(ProductModel product) async {
     try {
-      final batchDocs = await _firestore
-          .collection(FirestoreConstants.batches)
-          .where(FirestoreConstants.productId, isEqualTo: product.id)
-          .get();
-
-      if (batchDocs.docs.isNotEmpty) {
-        return batchDocs.docs
-            .map((doc) => BatchModel.fromSnapshot(doc, product))
-            .toList();
+      // The repository returns batches with `product = null`; the service
+      // attaches the product reference so the model carries the
+      // cross-collection join. Returns null when no batches exist (matches
+      // the original service contract, where an empty result -> null).
+      final batches = await _repo.getBatchesByProductId(product.id);
+      if (batches.isEmpty) return null;
+      for (final batch in batches) {
+        batch.product = product;
       }
-
-      return null;
+      return batches;
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to fetch product batches', e, stackTrace);
       throw FirestoreException('Failed to fetch product batches',
@@ -83,13 +66,16 @@ class ProductService implements IProductService {
   @override
   Future<String> addProduct(ProductModel product) async {
     try {
-      DocumentReference docRef =
-          await _firestore.collection(FirestoreConstants.products).add({
-        ...product.toMap(),
-        FirestoreConstants.sellerId: _currentUser.uid,
-      });
-
-      return docRef.id;
+      // ProductModel does not carry a sellerId field, so we stamp it via the
+      // repository's `extraFields` sidecar map. This keeps business-logic
+      // injection (current user -> sellerId) in the service while leaving
+      // the raw write to the repo.
+      return await _repo.createProduct(
+        product,
+        extraFields: {
+          FirestoreConstants.sellerId: _currentUser.uid,
+        },
+      );
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to add product', e, stackTrace);
       throw FirestoreException('Failed to add product', originalError: e);
@@ -99,10 +85,7 @@ class ProductService implements IProductService {
   @override
   Future<void> updateProduct(String productId, ProductModel product) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.products)
-          .doc(productId)
-          .update(product.toMap());
+      await _repo.updateProduct(productId, product);
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to update product', e, stackTrace);
       throw FirestoreException('Failed to update product', originalError: e);
@@ -112,10 +95,7 @@ class ProductService implements IProductService {
   @override
   Future<void> deleteProduct(String productId) async {
     try {
-      await _firestore
-          .collection(FirestoreConstants.products)
-          .doc(productId)
-          .delete();
+      await _repo.deleteProduct(productId);
     } on FirebaseException catch (e, stackTrace) {
       AppLogger.error('Failed to delete product', e, stackTrace);
       throw FirestoreException('Failed to delete product', originalError: e);
