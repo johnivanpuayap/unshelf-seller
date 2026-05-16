@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Provider;
 import 'package:unshelf_seller/components/custom_app_bar.dart';
 import 'package:unshelf_seller/utils/colors.dart';
 import 'package:unshelf_seller/utils/theme.dart';
@@ -7,13 +7,27 @@ import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 import 'package:unshelf_seller/views/withdraw_request_view.dart';
 import 'package:intl/intl.dart';
 
-class BalanceOverviewView extends StatelessWidget {
+class BalanceOverviewView extends ConsumerStatefulWidget {
   const BalanceOverviewView({super.key});
+
+  @override
+  ConsumerState<BalanceOverviewView> createState() =>
+      _BalanceOverviewViewState();
+}
+
+class _BalanceOverviewViewState extends ConsumerState<BalanceOverviewView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(walletViewModelProvider.notifier).updateTransactions();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final walletViewModel = Provider.of<WalletViewModel>(context);
+    final walletState = ref.watch(walletViewModelProvider);
 
     return Scaffold(
         appBar: CustomAppBar(
@@ -39,7 +53,7 @@ class BalanceOverviewView extends StatelessWidget {
               const SizedBox(height: AppTheme.spacing24),
               Center(
                 child: Text(
-                  '\u20B1 ${walletViewModel.balance.toStringAsFixed(2)}',
+                  '₱ ${walletState.balance.toStringAsFixed(2)}',
                   style: theme.textTheme.displayLarge?.copyWith(
                     color: theme.colorScheme.onSurface,
                   ),
@@ -60,9 +74,9 @@ class BalanceOverviewView extends StatelessWidget {
               const Divider(),
               Expanded(
                 child: ListView.builder(
-                  itemCount: walletViewModel.transactions.length,
+                  itemCount: walletState.transactions.length,
                   itemBuilder: (context, index) {
-                    final transaction = walletViewModel.transactions[index];
+                    final transaction = walletState.transactions[index];
                     bool isWithdrawal = (transaction.type == 'Withdraw' ||
                         transaction.type == 'Commission Fee');
                     return Card(
@@ -89,7 +103,7 @@ class BalanceOverviewView extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '\u20B1 ${transaction.amount.toStringAsFixed(2)}',
+                              '₱ ${transaction.amount.toStringAsFixed(2)}',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 color: isWithdrawal
                                     ? AppColors.error
@@ -119,8 +133,7 @@ class BalanceOverviewView extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    WithdrawRequestView(walletViewModel: walletViewModel),
+                builder: (context) => const WithdrawRequestView(),
               ),
             );
           },

@@ -31,7 +31,6 @@ import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/listing_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/product_summary_viewmodel.dart';
-import 'package:unshelf_seller/viewmodels/wallet_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/notification_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/batch_viewmodel.dart';
 import 'package:unshelf_seller/viewmodels/select_products_viewmodel.dart';
@@ -105,7 +104,6 @@ void main() async {
               batchService: locator<IBatchService>(),
             ),
           ),
-          ChangeNotifierProvider(create: (_) => WalletViewModel()),
           ChangeNotifierProvider(create: (_) => AnalyticsViewModel()),
           ChangeNotifierProvider(
             create: (_) => NotificationViewModel(

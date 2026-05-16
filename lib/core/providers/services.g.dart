@@ -74,5 +74,22 @@ final batchServiceProvider = Provider<IBatchService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BatchServiceRef = ProviderRef<IBatchService>;
+String _$walletServiceHash() => r'0024ab5f573cf93b02a976e289daf41721337bc9';
+
+/// See also [walletService].
+@ProviderFor(walletService)
+final walletServiceProvider = Provider<IWalletService>.internal(
+  walletService,
+  name: r'walletServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$walletServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef WalletServiceRef = ProviderRef<IWalletService>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
