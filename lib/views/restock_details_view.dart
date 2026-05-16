@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/components/empty_state.dart';
 import 'package:unshelf_seller/models/batch_model.dart';
 import 'package:unshelf_seller/viewmodels/restock_viewmodel.dart';
@@ -308,7 +309,7 @@ class _ProductCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _FieldLabel('Restock quantity', color: cs.onSurface),
+          FieldLabel('Restock quantity', color: cs.onSurface),
           const SizedBox(height: 8),
           _StockStepper(
             controller: controller,
@@ -317,7 +318,7 @@ class _ProductCard extends StatelessWidget {
             onChanged: onStockChanged,
           ),
           const SizedBox(height: 16),
-          _FieldLabel('New expiry date', color: cs.onSurface),
+          FieldLabel('New expiry date', color: cs.onSurface),
           const SizedBox(height: 8),
           _DatePickerField(
             label: expiryLabel,
@@ -452,18 +453,3 @@ class _StepperButton extends StatelessWidget {
 // Field label (copied verbatim from auth screens)
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

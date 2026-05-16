@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/viewmodels/bundle_viewmodel.dart';
 
 /// Edit-bundle form, structured to the Phase 1 Quality Bar:
 /// SafeArea + Center + SingleChildScrollView + maxWidth 420 + Form +
-/// _FieldLabel pattern.
+/// FieldLabel pattern.
 class EditBundleView extends ConsumerStatefulWidget {
   final String bundleId;
 
@@ -109,7 +110,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 32),
 
                           // Image
-                          _FieldLabel('Bundle image', color: cs.onSurface),
+                          FieldLabel('Bundle image', color: cs.onSurface),
                           const SizedBox(height: 8),
                           _ImagePickerBox(
                             data: state.mainImageData,
@@ -138,7 +139,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 20),
 
                           // Name
-                          _FieldLabel('Bundle name', color: cs.onSurface),
+                          FieldLabel('Bundle name', color: cs.onSurface),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: notifier.bundleNameController,
@@ -156,7 +157,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 20),
 
                           // Description
-                          _FieldLabel('Description', color: cs.onSurface),
+                          FieldLabel('Description', color: cs.onSurface),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: notifier.bundleDescriptionController,
@@ -176,7 +177,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 20),
 
                           // Category
-                          _FieldLabel('Category', color: cs.onSurface),
+                          FieldLabel('Category', color: cs.onSurface),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
                             initialValue: state.selectedCategory.isEmpty
@@ -208,7 +209,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 20),
 
                           // Price
-                          _FieldLabel('Price', color: cs.onSurface),
+                          FieldLabel('Price', color: cs.onSurface),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: notifier.bundlePriceController,
@@ -240,7 +241,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 20),
 
                           // Stock
-                          _FieldLabel('Stock', color: cs.onSurface),
+                          FieldLabel('Stock', color: cs.onSurface),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: notifier.bundleStockController,
@@ -267,7 +268,7 @@ class _EditBundleViewState extends ConsumerState<EditBundleView> {
                           const SizedBox(height: 20),
 
                           // Discount
-                          _FieldLabel('Discount (%)', color: cs.onSurface),
+                          FieldLabel('Discount (%)', color: cs.onSurface),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: notifier.bundleDiscountController,
@@ -433,18 +434,3 @@ class _ImagePickerBox extends StatelessWidget {
 // Field label (copied verbatim from auth screens)
 // ────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

@@ -161,7 +161,7 @@ class _StoreViewState extends ConsumerState<StoreView> {
                     _TileSpec(
                       icon: Icons.flag_outlined,
                       label: 'Report an issue',
-                      onTap: () => _push(ReportFormView()),
+                      onTap: () => _push(const ReportFormView()),
                     ),
                   ],
                 ),

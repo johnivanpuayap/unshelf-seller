@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/authentication/views/login_view.dart';
 import 'package:unshelf_seller/core/interfaces/i_store_service.dart';
 import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
@@ -160,7 +161,7 @@ class _RegisterViewState extends State<RegisterView> {
                     const SizedBox(height: 40),
 
                     // Full name
-                    _FieldLabel('Full name', color: cs.onSurface),
+                    FieldLabel('Full name', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _sellerNameController,
@@ -179,7 +180,7 @@ class _RegisterViewState extends State<RegisterView> {
                     const SizedBox(height: 20),
 
                     // Email
-                    _FieldLabel('Email', color: cs.onSurface),
+                    FieldLabel('Email', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
@@ -200,7 +201,7 @@ class _RegisterViewState extends State<RegisterView> {
                     const SizedBox(height: 20),
 
                     // Store name (seller delta — between Email and Phone)
-                    _FieldLabel('Store name', color: cs.onSurface),
+                    FieldLabel('Store name', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _storeNameController,
@@ -218,7 +219,7 @@ class _RegisterViewState extends State<RegisterView> {
                     const SizedBox(height: 20),
 
                     // Phone number
-                    _FieldLabel('Phone number', color: cs.onSurface),
+                    FieldLabel('Phone number', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _phoneNumberController,
@@ -246,7 +247,7 @@ class _RegisterViewState extends State<RegisterView> {
                     const SizedBox(height: 20),
 
                     // Password
-                    _FieldLabel('Password', color: cs.onSurface),
+                    FieldLabel('Password', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
@@ -280,7 +281,7 @@ class _RegisterViewState extends State<RegisterView> {
                     const SizedBox(height: 20),
 
                     // Confirm password
-                    _FieldLabel('Confirm password', color: cs.onSurface),
+                    FieldLabel('Confirm password', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _confirmPasswordController,
@@ -384,18 +385,3 @@ class _RegisterViewState extends State<RegisterView> {
   }
 }
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
-}

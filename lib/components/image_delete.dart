@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:unshelf_seller/utils/colors.dart';
 
 class ImageWithDelete extends StatefulWidget {
   final Uint8List imageData;
@@ -9,7 +8,8 @@ class ImageWithDelete extends StatefulWidget {
   final double height;
   final EdgeInsets margin;
 
-  ImageWithDelete({
+  const ImageWithDelete({
+    super.key,
     required this.imageData,
     required this.onDelete,
     this.width = 70.0,
@@ -26,6 +26,7 @@ class _ImageWithDeleteState extends State<ImageWithDelete> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: widget.onDelete,
       child: MouseRegion(
@@ -48,10 +49,10 @@ class _ImageWithDeleteState extends State<ImageWithDelete> {
               if (_isHovering)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black54,
+                    color: cs.scrim.withValues(alpha: .54),
                     child: Center(
                       child: IconButton(
-                        icon: Icon(Icons.delete, color: AppColors.error),
+                        icon: Icon(Icons.delete, color: cs.error),
                         onPressed: widget.onDelete,
                       ),
                     ),

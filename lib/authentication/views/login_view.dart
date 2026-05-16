@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:unshelf_seller/authentication/views/forgot_password_view.dart';
 import 'package:unshelf_seller/authentication/views/register_view.dart';
+import 'package:unshelf_seller/components/field_label.dart';
 import 'package:unshelf_seller/core/interfaces/i_user_profile_service.dart';
 import 'package:unshelf_seller/core/service_locator.dart';
 import 'package:unshelf_seller/views/home_view.dart';
@@ -208,7 +209,7 @@ class _LoginViewState extends State<LoginView> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-                    _FieldLabel('Email', color: cs.onSurface),
+                    FieldLabel('Email', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
@@ -227,7 +228,7 @@ class _LoginViewState extends State<LoginView> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    _FieldLabel('Password', color: cs.onSurface),
+                    FieldLabel('Password', color: cs.onSurface),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
@@ -337,20 +338,4 @@ class _LoginViewState extends State<LoginView> {
       ),
     );
   }
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text, {required this.color});
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-            ),
-      );
 }
