@@ -31,8 +31,7 @@ class FirebaseUserRepository implements UserRepository {
         .map((doc) => doc.exists ? UserProfileModel.fromSnapshot(doc) : null);
   }
 
-  // Mirrors `UserProfileService.updateUserProfile` / `createUserDocument`.
-  // Uses set+merge for upsert semantics.
+  // Set+merge upsert using the model's wire shape.
   @override
   Future<void> upsertUser(UserProfileModel user) {
     return _firestore
@@ -51,5 +50,46 @@ class FirebaseUserRepository implements UserRepository {
         .collection('followers')
         .get();
     return snap.size;
+  }
+
+  // Mirrors `UserProfileService.getUserDocument`: returns the raw doc data
+  // map (or null when the doc does not exist).
+  @override
+  Future<Map<String, dynamic>?> getUserDocument(String userId) async {
+    final doc = await _firestore
+        .collection(FirestoreConstants.users)
+        .doc(userId)
+        .get();
+    if (!doc.exists) return null;
+    return doc.data();
+  }
+
+  // Mirrors `UserProfileService.createUserDocument`: full-document `.set()`.
+  @override
+  Future<void> createUserDocument(
+      String userId, Map<String, dynamic> data) {
+    return _firestore
+        .collection(FirestoreConstants.users)
+        .doc(userId)
+        .set(data);
+  }
+
+  // Mirrors `UserProfileService.updateUserProfile`: `.update()` patch.
+  @override
+  Future<void> updateUserFields(
+      String userId, Map<String, dynamic> fields) {
+    return _firestore
+        .collection(FirestoreConstants.users)
+        .doc(userId)
+        .update(fields);
+  }
+
+  // Mirrors `UserProfileService.submitReport`: appends to the top-level
+  // `reports` collection.
+  @override
+  Future<void> submitReport(Map<String, dynamic> reportData) async {
+    await _firestore
+        .collection(FirestoreConstants.reports)
+        .add(reportData);
   }
 }
